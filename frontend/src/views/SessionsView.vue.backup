@@ -1,0 +1,439 @@
+<template>
+  <v-container>
+    <v-row>
+      <v-col cols="12">
+        <h1 class="text-h4 mb-6">
+          <v-icon large class="mr-3">mdi-account-search</v-icon>
+          Find Tutors
+        </h1>
+        <p class="text-subtitle-1 text-medium-emphasis mb-6">
+          Discover experienced tutors and book sessions that fit your schedule
+        </p>
+      </v-col>
+    </v-row>
+
+    <!-- Loading -->
+    <v-row v-if="sessionStore.loading">
+      <v-col cols="12" class="text-center">
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+        <p class="mt-4">Loading sessions...</p>
+      </v-col>
+    </v-row>
+
+    <!-- Error -->
+    <v-row v-else-if="sessionStore.error">
+      <v-col cols="12">
+        <v-alert type="error" variant="tonal" class="mb-4">
+          {{ sessionStore.error }}
+          <template v-slot:append>
+            <v-btn @click="loadSessions" size="small" variant="text">Retry</v-btn>
+          </template>
+        </v-alert>
+      </v-col>
+    </v-row>
+
+    <!-- Sessions Grid -->
+    <v-row v-else-if="availableSessions.length > 0">
+      <v-col 
+        v-for="session in availableSessions" 
+        :key="session._id"
+        cols="12" 
+        sm="6" 
+        md="4" 
+        lg="3"
+      >
+        <v-card class="session-card" elevation="2">
+          <v-card-title>
+            <div>
+              <h3>{{ session.subject }}</h3>
+              <v-chip size="small" color="primary">{{ session.level }}</v-chip>
+            </div>
+          </v-card-title>
+          
+          <v-card-text>
+            <div class="mb-2">
+              <v-icon small class="mr-1">mdi-account</v-icon>
+              {{ session.tutor?.name || 'Unknown Tutor' }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-1">mdi-currency-usd</v-icon>
+              ${{ session.price }}/hour
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-1">mdi-calendar</v-icon>
+              {{ formatDate(session.date) }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-1">mdi-clock</v-icon>
+              {{ session.startTime }} - {{ session.endTime }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-1">mdi-timelapse</v-icon>
+              {{ session.duration }} minutes
+            </div>
+            <p class="text-body-2 mt-2">{{ session.description || 'No description available' }}</p>
+          </v-card-text>
+          
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn 
+              color="primary"
+              :loading="sessionStore.loading"
+              @click="bookSession(session._id)"
+            >
+              Book Session
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- No sessions message -->
+    <v-row v-else>
+      <v-col cols="12" class="text-center">
+        <v-icon size="64" color="grey">mdi-calendar-blank</v-icon>
+        <h3 class="text-medium-emphasis mt-4">No available sessions found</h3>
+        <p class="text-medium-emphasis">Check back later for new sessions.</p>
+        <v-btn @click="loadSessions" color="primary" class="mt-4">
+          <v-icon left>mdi-refresh</v-icon>
+          Refresh
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- Success Dialog -->
+    <v-dialog v-model="successDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h5">
+          <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+          Booking Successful!
+        </v-card-title>
+        <v-card-text>
+          Your session has been booked successfully.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="successDialog = false">
+            OK
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
+</template>
+        />
+      </v-col>
+    </v-row>
+
+    <!-- View Toggle -->
+    <v-row>
+      <v-col cols="12">
+        <div class="d-flex justify-space-between align-center mb-4">
+          <div>
+            <v-chip
+              color="primary"
+              text-color="white"
+              class="mr-2"
+            >
+              {{ displayedTutors.length }} tutor{{ displayedTutors.length !== 1 ? 's' : '' }} found
+            </v-chip>
+            <v-chip
+              v-if="totalAvailableSlots > 0"
+              color="success"
+              text-color="white"
+            >
+              {{ totalAvailableSlots }} available slot{{ totalAvailableSlots !== 1 ? 's' : '' }}
+            </v-chip>
+          </div>
+          
+          <v-btn-toggle
+            v-model="viewMode"
+            mandatory
+            dense
+          >
+            <v-btn value="grid" small>
+              <v-icon>mdi-view-grid</v-icon>
+              <span class="ml-1">Grid</span>
+            </v-btn>
+            <v-btn value="list" small>
+              <v-icon>mdi-view-list</v-icon>
+              <span class="ml-1">List</span>
+            </v-btn>
+          </v-btn-toggle>
+        </div>
+      </v-col>
+    </v-row>
+
+    <!-- Tutors Display -->
+    <v-row v-if="viewMode === 'grid'">
+      <v-col
+        v-for="tutor in displayedTutors"
+        :key="tutor._id"
+        cols="12"
+        sm="6"
+        lg="4"
+      >
+        <TutorCard
+          :tutor="tutor"
+          :available-slots="getAvailableSessions(tutor._id)"
+          :favorites="favorites"
+          @view-profile="viewTutorProfile"
+          @book-session="openBookingDialog"
+          @toggle-favorite="toggleFavorite"
+        />
+      </v-col>
+    </v-row>
+        lg="4"
+      >
+        <v-card elevation="2" class="mb-4">
+          <v-card-title>
+            <div>
+              <h3>{{ session.title }}</h3>
+              <v-chip color="primary" small class="mt-1">
+                {{ session.subject }}
+              </v-chip>
+            </div>
+          </v-card-title>
+          
+          <v-card-text>
+            <div class="mb-2">
+              <v-icon small class="mr-2">mdi-account</v-icon>
+              <strong>Tutor:</strong> {{ session.tutor.name }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-2">mdi-calendar</v-icon>
+              <strong>Date:</strong> {{ formatDate(session.date) }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-2">mdi-clock</v-icon>
+              <strong>Time:</strong> {{ session.startTime }} - {{ session.endTime }}
+            </div>
+            <div class="mb-2">
+              <v-icon small class="mr-2">mdi-timer</v-icon>
+              <strong>Duration:</strong> {{ session.duration }} minutes
+            </div>
+            <div v-if="session.description" class="mt-3">
+              <p class="text-body-2">{{ session.description }}</p>
+            </div>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              :loading="sessionStore.loading"
+              @click="bookSession(session._id)"
+            >
+              Book Session
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- No sessions message -->
+    <v-row v-if="filteredSessions.length === 0 && !sessionStore.loading">
+      <v-col cols="12" class="text-center">
+        <v-icon size="64" color="grey">mdi-calendar-blank</v-icon>
+        <h3 class="grey--text mt-4">No available sessions found</h3>
+        <p class="grey--text">Try adjusting your filters or check back later.</p>
+      </v-col>
+    </v-row>
+
+    <!-- Loading -->
+    <v-row v-if="sessionStore.loading">
+      <v-col cols="12" class="text-center">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="64"
+        ></v-progress-circular>
+      </v-col>
+    </v-row>
+
+    <!-- Success Dialog -->
+    <v-dialog v-model="successDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h5 success--text">
+          <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+          Session Booked!
+        </v-card-title>
+        <v-card-text>
+          Your session has been successfully booked. You can view it in your bookings.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="successDialog = false">
+            OK
+          </v-btn>
+          <v-btn color="secondary" to="/my-sessions">
+            View My Bookings
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
+</template>
+
+<script>
+import { useSessionStore } from '../stores/sessions'
+import { useUserStore } from '../stores/users'
+import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notifications'
+import TutorSearchComponent from '@/components/TutorSearchComponent.vue'
+import TutorCard from '@/components/TutorCard.vue'
+
+export default {
+  name: 'SessionsView',
+  components: {
+    TutorSearchComponent,
+    TutorCard
+  },
+  
+  setup() {
+    const sessionStore = useSessionStore()
+    const userStore = useUserStore()
+    const authStore = useAuthStore()
+    const notificationStore = useNotificationStore()
+    
+    return {
+      sessionStore,
+      userStore,
+      authStore,
+      notificationStore
+    }
+  },
+
+  data() {
+    return {
+      viewMode: 'grid',
+      displayedTutors: [],
+      allTutors: [],
+      favorites: [],
+      selectedTutor: null,
+      showBookingDialog: false,
+      bookingForm: {
+        sessionId: '',
+        date: '',
+        time: '',
+        notes: ''
+      }
+    }
+  },
+
+  computed: {
+    totalAvailableSlots() {
+      return this.sessionStore.availableSessions.length
+    }
+  },
+
+  async mounted() {
+    await this.loadData()
+  },
+
+  methods: {
+    async loadData() {
+      try {
+        // Load all tutors
+        await this.userStore.fetchUsers({ role: 'tutor' })
+        this.allTutors = this.userStore.users.filter(user => user.role === 'tutor')
+        this.displayedTutors = [...this.allTutors]
+        
+        // Load available sessions
+        await this.sessionStore.fetchSessions({ status: 'available' })
+        
+        // Load user's favorites (if logged in as student)
+        if (this.authStore.isStudent) {
+          this.loadFavorites()
+        }
+      } catch (error) {
+        this.notificationStore.addNotification({
+          title: 'Loading Error',
+          message: 'Could not load tutors and sessions',
+          type: 'error'
+        })
+      }
+    },
+
+    handleSearchResults(filteredTutors) {
+      this.displayedTutors = filteredTutors
+    },
+
+    getAvailableSessions(tutorId) {
+      return this.sessionStore.availableSessions.filter(session => 
+        session.tutor._id === tutorId
+      )
+    },
+
+    viewTutorProfile(tutor) {
+      // Navigate to tutor profile or show modal
+      this.$router.push(`/tutors/${tutor._id}`)
+    },
+
+    openBookingDialog(tutor) {
+      this.selectedTutor = tutor
+      this.showBookingDialog = true
+    },
+
+    async toggleFavorite(tutorId) {
+      try {
+        const index = this.favorites.indexOf(tutorId)
+        if (index > -1) {
+          this.favorites.splice(index, 1)
+          this.notificationStore.addNotification({
+            title: 'Removed from Favorites',
+            message: 'Tutor removed from your favorites',
+            type: 'info'
+          })
+        } else {
+          this.favorites.push(tutorId)
+          this.notificationStore.addNotification({
+            title: 'Added to Favorites',
+            message: 'Tutor added to your favorites',
+            type: 'success'
+          })
+        }
+        
+        // Save to backend
+        await this.saveFavorites()
+      } catch (error) {
+        this.notificationStore.addNotification({
+          title: 'Error',
+          message: 'Could not update favorites',
+          type: 'error'
+        })
+      }
+    },
+
+    loadFavorites() {
+      // Load from localStorage for now
+      const saved = localStorage.getItem(`favorites_${this.authStore.user._id}`)
+      if (saved) {
+        this.favorites = JSON.parse(saved)
+      }
+    },
+
+    async saveFavorites() {
+      // Save to localStorage for now
+      localStorage.setItem(
+        `favorites_${this.authStore.user._id}`, 
+        JSON.stringify(this.favorites)
+      )
+    }
+  },
+
+  async mounted() {
+    await this.loadData()
+  }
+}
+</script>
+
+<style scoped>
+.action-card {
+  transition: all 0.3s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+}
+</style>

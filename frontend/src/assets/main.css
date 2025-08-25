@@ -1,0 +1,332 @@
+@import './base.css';
+@import '../design/tokens.css';
+
+/* Reset and base styles for the app */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-stack);
+}
+
+#app {
+  font-weight: normal;
+  height: 100%;
+}
+
+/* Modern global styles using design tokens */
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Vuetify component enhancements */
+.v-application {
+  background: transparent !important;
+  font-family: var(--font-stack) !important;
+}
+
+.v-card {
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-md) !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.v-card:hover {
+  box-shadow: var(--shadow-brand-lg) !important;
+  transform: translateY(-2px) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.v-card.elevation-0 {
+  box-shadow: none !important;
+}
+
+.v-card.elevation-1 {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.v-card.elevation-2 {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.v-card.elevation-3 {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.v-card.elevation-6 {
+  box-shadow: var(--shadow-brand) !important;
+}
+
+.v-card.elevation-8 {
+  box-shadow: var(--shadow-brand-lg) !important;
+}
+
+/* Enhanced buttons */
+.v-btn {
+  border-radius: var(--radius-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  text-transform: none !important;
+  letter-spacing: 0.025em !important;
+  transition: all var(--transition-fast) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.v-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.v-btn.v-btn--variant-elevated {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.v-btn.v-btn--variant-elevated:hover {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.v-btn--size-large {
+  border-radius: var(--radius-lg) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  padding: 12px 24px !important;
+}
+
+/* Form elements */
+.v-text-field .v-field {
+  border-radius: var(--radius-md) !important;
+  background: var(--color-surface) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--color-border) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.v-text-field .v-field:hover {
+  border-color: var(--color-border-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.v-text-field .v-field--focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.v-select .v-field,
+.v-textarea .v-field {
+  border-radius: var(--radius-md) !important;
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* Ensure select field backgrounds are completely opaque */
+.v-field__input,
+.v-field__field {
+  background: var(--color-surface) !important;
+}
+
+.v-field .v-field__overlay {
+  background: transparent !important;
+}
+
+/* Chips */
+.v-chip {
+  border-radius: var(--radius-full) !important;
+  font-weight: var(--font-weight-medium) !important;
+  font-size: 0.875rem !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Lists */
+.v-list {
+  background: transparent !important;
+}
+
+/* Dropdown menus and overlays - solid backgrounds */
+.v-menu > .v-overlay__content > .v-list,
+.v-select__content .v-list,
+.v-autocomplete__content .v-list {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  backdrop-filter: none !important;
+}
+
+.v-list-item {
+  border-radius: var(--radius-md) !important;
+  margin: var(--space-1) var(--space-2) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.v-list-item:hover {
+  background: var(--color-gradient-soft) !important;
+  transform: translateX(4px) !important;
+}
+
+.v-list-item--active {
+  background: var(--color-gradient-soft) !important;
+  color: var(--color-primary) !important;
+  font-weight: var(--font-weight-medium) !important;
+}
+
+/* Dialogs */
+.v-dialog .v-card {
+  border-radius: var(--radius-2xl) !important;
+  box-shadow: var(--shadow-xl) !important;
+  border: none !important;
+}
+
+/* Toolbars */
+.v-toolbar {
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Navigation drawer */
+.v-navigation-drawer {
+  border-radius: 0 var(--radius-xl) var(--radius-xl) 0 !important;
+  background: var(--color-surface-glass) !important;
+  backdrop-filter: blur(20px) !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+/* App bar */
+.v-app-bar {
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--color-border-light) !important;
+}
+
+/* Main content area */
+.v-main {
+  background: transparent !important;
+}
+
+/* Badges */
+.v-badge .v-badge__badge {
+  border-radius: var(--radius-full) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Alerts */
+.v-alert {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Tabs */
+.v-tabs {
+  background: var(--color-surface-glass) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.v-tab {
+  border-radius: var(--radius-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  text-transform: none !important;
+}
+
+/* Data tables */
+.v-data-table {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.v-data-table__tr:hover {
+  background: var(--color-gradient-soft) !important;
+}
+
+/* Snackbars */
+.v-snackbar .v-sheet {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* Menu overlays */
+.v-overlay .v-menu {
+  background: var(--color-surface) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.v-overlay__content .v-card {
+  background: var(--color-surface) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .v-card {
+    border-radius: var(--radius-lg) !important;
+  }
+  
+  .v-dialog .v-card {
+    border-radius: var(--radius-xl) !important;
+  }
+  
+  .v-btn--size-large {
+    border-radius: var(--radius-md) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .v-card {
+    border-radius: var(--radius-md) !important;
+  }
+  
+  .v-navigation-drawer {
+    border-radius: 0 !important;
+  }
+  
+  .v-toolbar {
+    border-radius: 0 !important;
+  }
+}
+
+/* Accessibility enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .v-card,
+  .v-btn,
+  .v-list-item,
+  .v-text-field .v-field {
+    transition: none !important;
+  }
+  
+  .v-card:hover,
+  .v-btn:hover,
+  .v-list-item:hover {
+    transform: none !important;
+  }
+}
+
+/* Focus indicators */
+.v-btn:focus-visible {
+  box-shadow: var(--focus-ring), var(--shadow-md) !important;
+}
+
+.v-list-item:focus-visible {
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Custom utility classes */
+.glass-effect {
+  background: var(--color-surface-glass) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--color-border-light) !important;
+}
+
+.surface-hover:hover {
+  background: var(--color-surface-hover) !important;
+}
