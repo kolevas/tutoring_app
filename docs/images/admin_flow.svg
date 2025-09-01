@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720">
+  <defs>
+    <style><![CDATA[
+      .title { font: 700 22px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; fill: #111827; }
+      .label { font: 600 14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; fill: #1f2937; }
+      .small { font: 500 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif; fill: #374151; }
+      .lane { fill: #ffffff; stroke: #bae6fd; stroke-width: 2; rx: 10; }
+      .bg { fill: #f0f9ff; }
+      .arrow { stroke: #0284c7; stroke-width: 2; marker-end: url(#arrowhead); }
+      .box { fill: #e0f2fe; stroke: #7dd3fc; rx: 6; }
+      .note { fill: #fef3c7; stroke: #facc15; rx: 6; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="#0284c7" />
+    </marker>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1100" height="720"/>
+  <text class="title" x="30" y="40">Admin Management Flow - Users and Roles</text>
+
+  <!-- Lanes -->
+  <rect class="lane" x="30" y="70" width="320" height="620"/>
+  <text class="label" x="50" y="95">Frontend (Admin)</text>
+
+  <rect class="lane" x="390" y="70" width="320" height="620"/>
+  <text class="label" x="410" y="95">API (Express)</text>
+
+  <rect class="lane" x="750" y="70" width="320" height="620"/>
+  <text class="label" x="770" y="95">Database (MongoDB)</text>
+
+  <!-- List users -->
+  <rect class="box" x="50" y="130" width="280" height="60"/>
+  <text class="small" x="60" y="155">1) GET /api/users?role=tutor</text>
+  <line class="arrow" x1="330" y1="160" x2="390" y2="160"/>
+  <rect class="note" x="410" y="130" width="280" height="60"/>
+  <text class="small" x="420" y="155">protect - authorize('admin')</text>
+  <line class="arrow" x1="690" y1="160" x2="750" y2="160"/>
+  <rect class="note" x="770" y="130" width="280" height="60"/>
+  <text class="small" x="780" y="155">find(query).select('-password')</text>
+
+  <!-- Create user -->
+  <rect class="box" x="50" y="220" width="280" height="60"/>
+  <text class="small" x="60" y="245">2) POST /api/users (create)</text>
+  <line class="arrow" x1="330" y1="250" x2="390" y2="250"/>
+  <rect class="note" x="410" y="220" width="280" height="60"/>
+  <text class="small" x="420" y="245">protect - authorize('admin'); validate role</text>
+  <line class="arrow" x1="690" y1="250" x2="750" y2="250"/>
+  <rect class="note" x="770" y="220" width="280" height="60"/>
+  <text class="small" x="780" y="245">insertOne user</text>
+
+  <!-- Update single role -->
+  <rect class="box" x="50" y="310" width="280" height="60"/>
+  <text class="small" x="60" y="335">3) PUT /api/users/:id/role</text>
+  <line class="arrow" x1="330" y1="340" x2="390" y2="340"/>
+  <rect class="note" x="410" y="310" width="280" height="60"/>
+  <text class="small" x="420" y="335">protect - authorize('admin'); prevent self-demotion</text>
+  <line class="arrow" x1="690" y1="340" x2="750" y2="340"/>
+  <rect class="note" x="770" y="310" width="280" height="60"/>
+  <text class="small" x="780" y="335">save updated role</text>
+
+  <!-- Bulk roles -->
+  <rect class="box" x="50" y="400" width="280" height="60"/>
+  <text class="small" x="60" y="425">4) PUT /api/users/roles/bulk</text>
+  <line class="arrow" x1="330" y1="430" x2="390" y2="430"/>
+  <rect class="note" x="410" y="400" width="280" height="60"/>
+  <text class="small" x="420" y="425">protect - authorize('admin'); per-user validations</text>
+  <line class="arrow" x1="690" y1="430" x2="750" y2="430"/>
+  <rect class="note" x="770" y="400" width="280" height="60"/>
+  <text class="small" x="780" y="425">update many user roles; collect errors</text>
+
+  <!-- Delete user -->
+  <rect class="box" x="50" y="490" width="280" height="60"/>
+  <text class="small" x="60" y="515">5) DELETE /api/users/:id</text>
+  <line class="arrow" x1="330" y1="520" x2="390" y2="520"/>
+  <rect class="note" x="410" y="490" width="280" height="60"/>
+  <text class="small" x="420" y="515">protect - authorize('admin')</text>
+  <line class="arrow" x1="690" y1="520" x2="750" y2="520"/>
+  <rect class="note" x="770" y="490" width="280" height="60"/>
+  <text class="small" x="780" y="515">findById - deleteOne()</text>
+
+  <!-- Security notes -->
+  <rect class="box" x="50" y="580" width="280" height="100"/>
+  <text class="small" x="60" y="605">Security features:</text>
+  <text class="small" x="60" y="625">• Admin cannot demote themselves</text>
+  <text class="small" x="60" y="645">• All actions require admin role</text>
+  <text class="small" x="60" y="665">• Bulk updates handle partial failures</text>
+
+  <rect class="box" x="410" y="580" width="280" height="100"/>
+  <text class="small" x="420" y="605">Role validation:</text>
+  <text class="small" x="420" y="625">• student, tutor, admin only</text>
+  <text class="small" x="420" y="645">• Unique email enforcement</text>
+  <text class="small" x="420" y="665">• Profile/subject updates for tutors</text>
+
+  <rect class="box" x="770" y="580" width="280" height="100"/>
+  <text class="small" x="780" y="605">Database operations:</text>
+  <text class="small" x="780" y="625">• Indexes on role, email</text>
+  <text class="small" x="780" y="645">• Cascade session cleanup</text>
+  <text class="small" x="780" y="665">• Audit log for role changes</text>
+</svg>
