@@ -14,19 +14,34 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "~/*": ["./src/*"]
     },
-    "types": ["vite/client"]
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "src/**/*.js",
     "src/**/*.vue",
     "src/**/*.json",
-    "vite.config.js"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vite.config.js",
+    "eslint.config.js",
+    "*.config.js"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "public"
-  ]
+    "public",
+    "cypress",
+    "coverage",
+    "**/*.test.js",
+    "**/*.spec.js"
+  ],
+  "vueCompilerOptions": {
+    "target": 3
+  }
 }
