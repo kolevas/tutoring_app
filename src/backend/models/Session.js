@@ -43,7 +43,7 @@ const sessionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['available', 'booked', 'completed', 'cancelled'],
+    enum: ['available', 'booked', 'completed', 'cancelled', 'expired'],
     default: 'available'
   },
   meetingLink: {

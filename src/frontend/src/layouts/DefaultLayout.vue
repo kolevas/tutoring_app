@@ -19,7 +19,7 @@
         </v-avatar>
         <div v-if="!isRail" class="user-info">
           <div class="user-name">{{ authStore.userName }}</div>
-          <v-chip size="x-small" :color="roleColor" variant="elevated" class="user-role">
+          <v-chip size="x-small" color="primary" variant="elevated" class="user-role">
             {{ authStore.userRole }}
           </v-chip>
         </div>
@@ -49,12 +49,15 @@
             active-class="nav-item--active"
             :style="{ animationDelay: `${index * 50}ms` }"
           >
-            <template #prepend>
-              <v-icon size="20" class="nav-icon" :class="{ 'nav-icon--rail': isRail }">{{ item.icon }}</v-icon>
+            <template v-if="!isRail" #prepend>
+              <v-icon size="20" class="nav-icon">{{ item.icon }}</v-icon>
             </template>
             <v-list-item-title v-if="!isRail" class="nav-title">
               {{ item.title }}
             </v-list-item-title>
+            <div v-if="isRail" class="rail-icon-wrapper">
+              <v-icon size="20" class="nav-icon nav-icon--rail">{{ item.icon }}</v-icon>
+            </div>
           </v-list-item>
         </template>
       </v-tooltip>
@@ -64,50 +67,65 @@
     <div class="nav-footer" :class="{ 'nav-footer--rail': isRail }">
       <v-divider class="nav-divider" />
       <div class="nav-actions" :class="{ 'nav-actions--rail': isRail }">
-        <v-tooltip
-          text="Logout"
-          location="end"
-          :disabled="!isRail"
+        <!-- Logout Button -->
+        <div v-if="isRail" class="nav-action-item nav-action-item--rail">
+          <v-tooltip text="Logout" location="end">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                variant="text"
+                color="error"
+                icon
+                class="nav-action-btn"
+                @click="logout"
+              >
+                <div class="rail-icon-wrapper">
+                  <v-icon size="20" class="nav-icon nav-icon--rail">mdi-logout</v-icon>
+                </div>
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </div>
+        <v-btn
+          v-else
+          variant="text"
+          color="error"
+          block
+          class="nav-btn"
+          @click="logout"
         >
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="isRail ? props : {}"
-              variant="text"
-              color="error"
-              :block="!isRail"
-              :icon="isRail"
-              class="nav-btn logout-btn"
-              :class="{ 'nav-btn--rail': isRail }"
-              @click="logout"
-            >
-              <v-icon :start="!isRail">mdi-logout</v-icon>
-              <span v-if="!isRail">Logout</span>
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon start>mdi-logout</v-icon>
+          <span>Logout</span>
+        </v-btn>
         
-        <v-tooltip
-          :text="isRail ? 'Expand' : 'Collapse'"
-          location="end"
-          :disabled="!isRail"
+        <!-- Collapse/Expand Button -->
+        <div v-if="isRail" class="nav-action-item nav-action-item--rail">
+          <v-tooltip text="Expand" location="end">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                variant="text"
+                icon
+                class="nav-action-btn"
+                @click="toggleRail"
+              >
+                <div class="rail-icon-wrapper">
+                  <v-icon size="20" class="nav-icon nav-icon--rail">mdi-arrow-expand-right</v-icon>
+                </div>
+              </v-btn>
+            </template>
+          </v-tooltip>
+        </div>
+        <v-btn
+          v-else
+          variant="text"
+          :block="!isMobile"
+          class="nav-btn"
+          @click="toggleRail"
         >
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="isRail ? props : {}"
-              variant="text"
-              :block="!isMobile && !isRail"
-              :icon="isRail"
-              class="nav-btn collapse-btn"
-              :class="{ 'nav-btn--rail': isRail }"
-              @click="toggleRail"
-            >
-              <v-icon :start="!isRail">
-                {{ isRail ? 'mdi-arrow-expand-right' : 'mdi-arrow-collapse-left' }}
-              </v-icon>
-              <span v-if="!isRail">{{ isRail ? 'Expand' : 'Collapse' }}</span>
-            </v-btn>
-          </template>
-        </v-tooltip>
+          <v-icon start>mdi-arrow-collapse-left</v-icon>
+          <span>Collapse</span>
+        </v-btn>
       </div>
     </div>
   </v-navigation-drawer>
@@ -208,14 +226,6 @@ export default {
     isRail() {
       return this.rail && !this.isMobile
     },
-    roleColor() {
-      switch(this.authStore.userRole) {
-        case 'student': return 'primary'
-        case 'tutor': return 'success'
-        case 'admin': return 'secondary'
-        default: return 'grey'
-      }
-    },
     menuItems() {
       const items = [
         { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/dashboard' }
@@ -248,22 +258,14 @@ export default {
       return items
     },
     bottomNav() {
-      const base = [
-        { label: 'Home', icon: 'mdi-view-dashboard', to: '/dashboard' }
-      ]
+      const base = [{ label: 'Home', icon: 'mdi-view-dashboard', to: '/dashboard' }]
       
       if (this.authStore.isStudent) {
-        base.push(
-          { label: 'Sessions', icon: 'mdi-calendar-search', to: '/sessions' },
-          { label: 'My Sessions', icon: 'mdi-calendar-check', to: '/my-sessions' }
-        )
+        base.push({ label: 'Sessions', icon: 'mdi-calendar-search', to: '/sessions' })
       }
       
       if (this.authStore.isTutor) {
-        base.push(
-          { label: 'My Sessions', icon: 'mdi-calendar', to: '/tutor-sessions' },
-          { label: 'Create', icon: 'mdi-calendar-plus', to: '/sessions/create' }
-        )
+        base.push({ label: 'My Sessions', icon: 'mdi-calendar', to: '/tutor-sessions' })
       }
       
       base.push({ label: 'Profile', icon: 'mdi-account-circle', to: '/profile' })
@@ -304,31 +306,14 @@ export default {
 </script>
 
 <style scoped>
-/* Layout wrapper - simplified styling */
+/* Simplified layout styles */
 .default-layout {
   min-height: 100vh;
-  position: relative;
-}
-
-/* Navigation Drawer */
-.navigation-drawer {
-  backdrop-filter: blur(20px) !important;
-}
-
-/* Rail mode specific styling */
-.navigation-drawer.v-navigation-drawer--rail {
-  overflow-x: hidden !important;
-}
-
-.navigation-drawer.v-navigation-drawer--rail .v-navigation-drawer__content {
-  width: 80px !important;
-  padding: 0 !important;
 }
 
 .nav-header {
   padding: 24px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.3s ease;
 }
 
 .user-profile {
@@ -338,34 +323,13 @@ export default {
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #3486eb 0%, #2563eb 100%) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(255,255,255,0.2);
-}
-
-.user-info {
-  flex: 1;
-  min-width: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent)) !important;
 }
 
 .user-name {
   font-weight: 600;
   font-size: 0.95rem;
   margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-role {
-  font-weight: 500 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.nav-divider {
-  margin: 0 16px;
-  opacity: 0.6;
 }
 
 .nav-menu {
@@ -373,115 +337,15 @@ export default {
   flex: 1;
 }
 
-.nav-menu--rail {
-  padding: 16px 8px;
-}
-
 .nav-item {
-  position: relative;
-  border-radius: 12px !important;
+  border-radius: var(--radius-md) !important;
   margin: 4px 0 !important;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-  animation: slideInLeft 0.4s ease-out;
-  animation-fill-mode: both;
-}
-
-.nav-item--rail {
-  margin: 8px auto !important;
-  width: 48px !important;
-  height: 48px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.nav-item--rail .v-list-item__prepend {
-  width: 100% !important;
-  text-align: center !important;
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-}
-
-.nav-icon {
-  transition: all 0.3s ease !important;
-}
-
-.nav-icon--rail {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-}
-
-.nav-title {
-  font-weight: 500;
-  font-size: 0.9rem;
-  opacity: 0.9;
-  transition: opacity 0.3s ease;
-}
-
-.nav-item:hover .nav-title {
-  opacity: 1;
+  transition: all var(--transition-normal) !important;
 }
 
 .nav-item--active {
-  background: rgba(52, 134, 235, 0.12) !important;
-  color: rgb(var(--v-theme-primary)) !important;
-}
-
-.nav-item--active .nav-icon {
-  color: rgb(var(--v-theme-primary)) !important;
-}
-
-/* Nav Footer */
-.nav-footer {
-  padding: 16px 12px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.nav-footer--rail {
-  padding: 16px 8px;
-}
-
-.nav-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.nav-actions--rail {
-  align-items: center;
-}
-
-.nav-btn {
-  transition: all 0.3s ease !important;
-  border-radius: 8px !important;
-}
-
-.nav-btn--rail {
-  width: 48px !important;
-  height: 48px !important;
-}
-
-.logout-btn:hover {
-  background: rgba(220, 38, 38, 0.1) !important;
-}
-
-.collapse-btn:hover {
-  background: rgba(52, 134, 235, 0.1) !important;
-}
-
-/* App Header */
-.app-header {
-  backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
-
-.mobile-menu-btn {
-  margin-right: 8px;
+  background: var(--color-gradient-soft) !important;
+  color: var(--color-primary) !important;
 }
 
 .brand-content {
@@ -490,14 +354,10 @@ export default {
   gap: 12px;
 }
 
-.brand-icon {
-  animation: pulse 2s infinite;
-}
-
 .brand-text {
   font-weight: 700;
   font-size: 1.5rem;
-  background: linear-gradient(135deg, #3486eb 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -509,40 +369,19 @@ export default {
   gap: 4px;
 }
 
-.header-btn {
-  transition: all 0.3s ease !important;
-  border-radius: 8px !important;
-}
-
-.header-btn:hover {
-  background: rgba(52, 134, 235, 0.1) !important;
-  color: rgb(var(--v-theme-primary)) !important;
-}
-
-/* Main Content */
 .main-content {
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all var(--transition-normal);
 }
 
 .content-wrapper {
   opacity: 0;
-  transform: translateY(20px) scale(0.98);
-  transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform: translateY(20px);
+  transition: all 0.6s ease;
 }
 
 .content-entered {
   opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-/* Bottom Navigation */
-.bottom-navigation {
-  backdrop-filter: blur(20px) !important;
-  border-top: 1px solid rgba(255,255,255,0.1) !important;
-}
-
-.bottom-nav-btn {
-  transition: all 0.3s ease !important;
+  transform: translateY(0);
 }
 
 .bottom-nav-label {
@@ -551,28 +390,7 @@ export default {
   margin-top: 4px;
 }
 
-/* Animations */
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-/* Rail Mode Specific Fix */
+/* Rail Mode */
 .nav-header.rail-collapsed {
   padding: 16px 8px;
   text-align: center;
@@ -586,118 +404,57 @@ export default {
   display: none;
 }
 
-/* Mobile Responsive */
-@media (max-width: 959px) {
-  .nav-header {
-    padding: 20px 16px;
-  }
-  
-  .nav-menu {
-    padding: 16px;
-  }
-  
-  .brand-text {
-    font-size: 1.25rem;
-  }
-  
-  .header-actions {
-    gap: 2px;
-  }
-}
-
-/* Dark mode specific adjustments */
-.v-theme--dark .nav-header {
-  border-bottom-color: rgba(51, 65, 85, 0.8);
-}
-
-.v-theme--dark .nav-divider {
-  border-color: rgba(51, 65, 85, 0.8);
-}
-
-.v-theme--dark .nav-footer {
-  border-top-color: rgba(51, 65, 85, 0.8);
-}
-
-.v-theme--dark .app-header {
-  border-bottom-color: rgba(51, 65, 85, 0.8) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
-.v-theme--dark .bottom-navigation {
-  border-top-color: rgba(51, 65, 85, 0.8) !important;
-}
-</style>
-  margin-bottom: var(--space-2) !important;
-  transition: all var(--transition-fast) !important;
-  animation: fadeInLeft 0.4s var(--transition-normal) both;
+.nav-menu--rail {
+  padding: 16px 0;
 }
 
 .nav-item--rail {
-  justify-content: center !important;
-  padding: var(--space-3) !important;
+  margin: 8px auto !important;
+  width: 64px !important;
   min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
 }
 
-.nav-item:hover {
-  background: var(--color-gradient-soft) !important;
-  transform: translateX(4px);
+.rail-icon-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.nav-item--rail:hover {
-  transform: translateX(0) scale(1.05);
-}
-
-.nav-item--active {
-  background: var(--color-gradient-soft) !important;
-  color: var(--color-primary) !important;
-  font-weight: var(--font-weight-medium) !important;
-}
-
-.nav-icon {
-  color: inherit;
-  margin-right: var(--space-3);
-}
-
-.nav-icon--rail {
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-}
-
-.nav-title {
-  font-weight: var(--font-weight-medium);
-  font-size: 0.9rem;
-}
-
-.nav-footer {
-  margin-top: auto;
-  padding: var(--space-4);
+.nav-item--rail .nav-icon--rail {
+  margin: 0 !important;
 }
 
 .nav-footer--rail {
-  padding: var(--space-4) var(--space-2);
-}
-
-.nav-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  padding: 16px 8px;
 }
 
 .nav-actions--rail {
   align-items: center;
 }
 
-.nav-btn {
-  justify-content: flex-start !important;
-  font-weight: var(--font-weight-medium) !important;
-  border-radius: var(--radius-md) !important;
-  transition: all var(--transition-fast) !important;
+.nav-btn--rail {
+  width: 48px !important;
+  height: 48px !important;
+  justify-content: center !important;
 }
 
-.nav-btn--rail {
-  justify-content: center !important;
-  min-width: 44px !important;
-  width: 44px !important;
+/* Mobile adjustments */
+@media (max-width: 959px) {
+  .nav-header {
+    padding: 20px 16px;
+  }
+  
+  .brand-text {
+    font-size: 1.25rem;
+  }
+}
+</style>
   height: 44px !important;
   padding: 0 !important;
 }
@@ -884,18 +641,6 @@ export default {
   align-self: center;
 }
 
-/* Alternative approach: use absolute positioning to center icons perfectly */
-.nav-item--rail {
-  position: relative !important;
-}
-
-.nav-item--rail .nav-icon--rail {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-}
-
 /* Rail mode navigation menu adjustments */
 .nav-menu--rail {
   padding: var(--space-3) 0;
@@ -909,16 +654,6 @@ export default {
 
 .nav-actions--rail {
   align-items: center;
-  width: 100%;
-}
-
-.nav-btn--rail {
-  justify-content: center !important;
-  min-width: 48px !important;
-  width: 48px !important;
-  height: 48px !important;
-  padding: 0 !important;
-  margin: var(--space-1) 0 !important;
 }
 
 /* Responsive Design */
@@ -942,24 +677,3 @@ export default {
   }
 }
 
-/* Accessibility & Motion */
-@media (prefers-reduced-motion: reduce) {
-  .nav-item,
-  .content-wrapper,
-  .nav-btn,
-  .header-btn {
-    transition: none !important;
-    animation: none !important;
-  }
-  
-  .nav-item:hover {
-    transform: none !important;
-  }
-}
-
-/* Focus states */
-.nav-item:focus-visible,
-.nav-btn:focus-visible,
-.header-btn:focus-visible {
-  box-shadow: var(--focus-ring) !important;
-}

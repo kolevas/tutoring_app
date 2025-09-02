@@ -409,34 +409,248 @@ import { eventBus } from '../../utils/eventBus'
 export default {
   name: 'AdminSessionsView',
   components: { StatCard },
-  setup() { const sessionStore = useSessionStore(); return { sessionStore } },
-  data() { return { searchQuery:'', statusFilter:'', subjectFilter:'', dateFilter:'', showSessionDialog:false, showDeleteDialog:false, selectedSession:null, sessionToDelete:null, sessionChanged:false, saving:false, deleting:false, headers:[ { text:'Session', value:'title', width:'200px' }, { text:'Tutor', value:'tutor', width:'180px' }, { text:'Student', value:'student', width:'180px' }, { text:'Date & Time', value:'dateTime', width:'150px' }, { text:'Status', value:'status', width:'120px' }, { text:'Actions', value:'actions', sortable:false, width:'100px' } ], statusOptions:[ { text:'Available', value:'available' }, { text:'Booked', value:'booked' }, { text:'Completed', value:'completed' }, { text:'Cancelled', value:'cancelled' } ] } },
+  
+  setup() {
+    const sessionStore = useSessionStore()
+    return { sessionStore }
+  },
+  
+  data() {
+    return {
+      searchQuery: '',
+      statusFilter: '',
+      subjectFilter: '',
+      dateFilter: '',
+      showSessionDialog: false,
+      showDeleteDialog: false,
+      selectedSession: null,
+      sessionToDelete: null,
+      sessionChanged: false,
+      saving: false,
+      deleting: false,
+      headers: [
+        { text: 'Session', value: 'title', width: '200px' },
+        { text: 'Tutor', value: 'tutor', width: '180px' },
+        { text: 'Student', value: 'student', width: '180px' },
+        { text: 'Date & Time', value: 'dateTime', width: '150px' },
+        { text: 'Status', value: 'status', width: '120px' },
+        { text: 'Actions', value: 'actions', sortable: false, width: '100px' }
+      ],
+      statusOptions: [
+        { text: 'Available', value: 'available' },
+        { text: 'Booked', value: 'booked' },
+        { text: 'Completed', value: 'completed' },
+        { text: 'Cancelled', value: 'cancelled' }
+      ]
+    }
+  },
   computed: {
-    filteredSessions(){ let sessions=[...this.sessionStore.sessions]; if(this.searchQuery){ const q=this.searchQuery.toLowerCase(); sessions=sessions.filter(s=> s.title.toLowerCase().includes(q)|| s.subject.toLowerCase().includes(q)|| s.tutor?.name.toLowerCase().includes(q)|| s.student?.name?.toLowerCase().includes(q)) } if(this.statusFilter) sessions=sessions.filter(s=> s.status===this.statusFilter); if(this.subjectFilter) sessions=sessions.filter(s=> s.subject===this.subjectFilter); if(this.dateFilter){ sessions=sessions.filter(s=> new Date(s.date).toDateString()=== new Date(this.dateFilter).toDateString()) } return sessions },
-    subjectOptions(){ const subjects=[...new Set(this.sessionStore.sessions.map(s=> s.subject))]; return subjects.map(s=> ({ text:s, value:s })) },
-    sessionStats(){ const list=this.sessionStore.sessions; return [ { title:'Total Sessions', value:list.length, icon:'mdi-calendar', color:'primary' }, { title:'Available', value:list.filter(s=>s.status==='available').length, icon:'mdi-calendar-check', color:'success' }, { title:'Booked', value:list.filter(s=>s.status==='booked').length, icon:'mdi-calendar-account', color:'warning' }, { title:'Completed', value:list.filter(s=>s.status==='completed').length, icon:'mdi-calendar-star', color:'info' } ] },
-    hasFilters(){ return !!(this.searchQuery||this.statusFilter||this.subjectFilter||this.dateFilter) }
+    filteredSessions() {
+      let sessions = [...this.sessionStore.sessions]
+      
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase()
+        sessions = sessions.filter(session =>
+          session.title.toLowerCase().includes(query) ||
+          session.subject.toLowerCase().includes(query) ||
+          session.tutor?.name.toLowerCase().includes(query) ||
+          session.student?.name?.toLowerCase().includes(query)
+        )
+      }
+      
+      if (this.statusFilter) {
+        sessions = sessions.filter(session => session.status === this.statusFilter)
+      }
+      
+      if (this.subjectFilter) {
+        sessions = sessions.filter(session => session.subject === this.subjectFilter)
+      }
+      
+      if (this.dateFilter) {
+        sessions = sessions.filter(session =>
+          new Date(session.date).toDateString() === new Date(this.dateFilter).toDateString()
+        )
+      }
+      
+      return sessions
+    },
+    
+    subjectOptions() {
+      const subjects = [...new Set(this.sessionStore.sessions.map(session => session.subject))]
+      return subjects.map(subject => ({ text: subject, value: subject }))
+    },
+    
+    sessionStats() {
+      const sessions = this.sessionStore.sessions
+      return [
+        {
+          title: 'Total Sessions',
+          value: sessions.length,
+          icon: 'mdi-calendar',
+          color: 'primary'
+        },
+        {
+          title: 'Available',
+          value: sessions.filter(s => s.status === 'available').length,
+          icon: 'mdi-calendar-check',
+          color: 'success'
+        },
+        {
+          title: 'Booked',
+          value: sessions.filter(s => s.status === 'booked').length,
+          icon: 'mdi-calendar-account',
+          color: 'warning'
+        },
+        {
+          title: 'Completed',
+          value: sessions.filter(s => s.status === 'completed').length,
+          icon: 'mdi-calendar-star',
+          color: 'info'
+        }
+      ]
+    },
+    
+    hasFilters() {
+      return !!(this.searchQuery || this.statusFilter || this.subjectFilter || this.dateFilter)
+    }
   },
   methods: {
-    getStatusColor(status){ switch(status){ case 'available': return 'success'; case 'booked': return 'warning'; case 'completed': return 'info'; case 'cancelled': return 'error'; default: return 'grey'} },
-    formatDate(d){ return new Date(d).toLocaleDateString('en-US',{ year:'numeric', month:'short', day:'numeric'}) },
-    viewSession(s){ this.selectedSession={...s}; this.sessionChanged=false; this.showSessionDialog=true },
-    editSession(s){ this.selectedSession={...s}; this.sessionChanged=false; this.showSessionDialog=true },
-    async cancelSession(s){ try { const result=await this.sessionStore.cancelBooking(s._id); eventBus.emit('showSnackbar', result.success? 'Session booking cancelled':'Failed to cancel', result.success?'success':'error') } catch(e){ eventBus.emit('showSnackbar','Failed to cancel session','error') } },
-    deleteSession(s){ this.sessionToDelete=s; this.showDeleteDialog=true },
-    async confirmDelete(){ if(!this.sessionToDelete) return; this.deleting=true; try { const r=await this.sessionStore.deleteSession(this.sessionToDelete._id); eventBus.emit('showSnackbar', r.success? 'Session deleted':'Failed to delete', r.success?'success':'error'); if(r.success){ this.showDeleteDialog=false; this.sessionToDelete=null } } finally { this.deleting=false } },
-    async saveSession(){ if(!this.selectedSession||!this.sessionChanged) return; this.saving=true; try { const r=await this.sessionStore.updateSession(this.selectedSession._id, this.selectedSession); eventBus.emit('showSnackbar', r.success? 'Session updated':'Failed to update', r.success?'success':'error'); if(r.success) this.closeSessionDialog() } finally { this.saving=false } },
-    closeSessionDialog(){ this.showSessionDialog=false; this.selectedSession=null; this.sessionChanged=false },
-    async refreshSessions(){ await this.sessionStore.fetchSessions(); eventBus.emit('showSnackbar','Sessions refreshed','success') },
-    clearFilters(){ this.searchQuery=this.statusFilter=this.subjectFilter=this.dateFilter='' },
-    exportSessions(){ 
-      // Simple CSV export
-      const headers=['Title','Subject','Tutor','Student','Date','Time','Status','Price'];
-      const rows=this.filteredSessions.map(s=> [s.title,s.subject,s.tutor?.name||'',s.student?.name||'',this.formatDate(s.date),`${s.startTime}-${s.endTime}`,s.status,s.price||0]);
-      const csv=[headers,...rows].map(r=> r.map(f=>`"${f}"`).join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`sessions-${new Date().toISOString().split('T')[0]}.csv`; a.click(); URL.revokeObjectURL(url); eventBus.emit('showSnackbar','Sessions exported successfully','success'); }
+    getStatusColor(status) {
+      const colors = {
+        available: 'success',
+        booked: 'warning',
+        completed: 'info',
+        cancelled: 'error'
+      }
+      return colors[status] || 'grey'
+    },
+    
+    formatDate(date) {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    },
+    
+    viewSession(session) {
+      this.selectedSession = { ...session }
+      this.sessionChanged = false
+      this.showSessionDialog = true
+    },
+    
+    editSession(session) {
+      this.selectedSession = { ...session }
+      this.sessionChanged = false
+      this.showSessionDialog = true
+    },
+    
+    async cancelSession(session) {
+      try {
+        const result = await this.sessionStore.cancelBooking(session._id)
+        eventBus.emit('showSnackbar', 
+          result.success ? 'Session booking cancelled' : 'Failed to cancel',
+          result.success ? 'success' : 'error'
+        )
+      } catch (error) {
+        eventBus.emit('showSnackbar', 'Failed to cancel session', 'error')
+      }
+    },
+    
+    deleteSession(session) {
+      this.sessionToDelete = session
+      this.showDeleteDialog = true
+    },
+    
+    async confirmDelete() {
+      if (!this.sessionToDelete) return
+      
+      this.deleting = true
+      try {
+        const result = await this.sessionStore.deleteSession(this.sessionToDelete._id)
+        eventBus.emit('showSnackbar',
+          result.success ? 'Session deleted' : 'Failed to delete',
+          result.success ? 'success' : 'error'
+        )
+        
+        if (result.success) {
+          this.showDeleteDialog = false
+          this.sessionToDelete = null
+        }
+      } finally {
+        this.deleting = false
+      }
+    },
+    
+    async saveSession() {
+      if (!this.selectedSession || !this.sessionChanged) return
+      
+      this.saving = true
+      try {
+        const result = await this.sessionStore.updateSession(this.selectedSession._id, this.selectedSession)
+        eventBus.emit('showSnackbar',
+          result.success ? 'Session updated' : 'Failed to update',
+          result.success ? 'success' : 'error'
+        )
+        
+        if (result.success) {
+          this.closeSessionDialog()
+        }
+      } finally {
+        this.saving = false
+      }
+    },
+    
+    closeSessionDialog() {
+      this.showSessionDialog = false
+      this.selectedSession = null
+      this.sessionChanged = false
+    },
+    
+    async refreshSessions() {
+      await this.sessionStore.fetchSessions()
+      eventBus.emit('showSnackbar', 'Sessions refreshed', 'success')
+    },
+    
+    clearFilters() {
+      this.searchQuery = ''
+      this.statusFilter = ''
+      this.subjectFilter = ''
+      this.dateFilter = ''
+    },
+    
+    exportSessions() {
+      const headers = ['Title', 'Subject', 'Tutor', 'Student', 'Date', 'Time', 'Status', 'Price']
+      const rows = this.filteredSessions.map(session => [
+        session.title,
+        session.subject,
+        session.tutor?.name || '',
+        session.student?.name || '',
+        this.formatDate(session.date),
+        `${session.startTime}-${session.endTime}`,
+        session.status,
+        session.price || 0
+      ])
+      
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `sessions-${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      
+      eventBus.emit('showSnackbar', 'Sessions exported successfully', 'success')
+    }
   },
-  async mounted(){ await this.sessionStore.fetchSessions() }
+  
+  async mounted() {
+    await this.sessionStore.fetchSessions()
+  }
 }
 </script>
 

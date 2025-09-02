@@ -15,155 +15,71 @@
         md="6" 
         lg="4"
       >
+        
         <v-card class="session-card" elevation="2">
-          <v-card-title>
+          <v-card-title class="pb-2">
             <div class="d-flex justify-space-between align-center w-100">
               <div>
-                <h3>{{ session.title || session.subject }}</h3>
+                <h3 class="text-h6 mb-2">{{ session.subject || 'Session' }}</h3>
                 <v-chip 
                   :color="getStatusColor(session.status)" 
                   small 
                   text-color="white"
+                  class="text-capitalize"
                 >
                   {{ session.status }}
                 </v-chip>
               </div>
-              <v-menu offset-y>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn icon v-bind="attrs" v-on="on">
-                    <v-icon>mdi-dots-vertical</v-icon>
-                  </v-btn>
-                </template>
-                <v-list>
-                  <v-list-item v-if="canEdit" @click="$emit('edit-session', session._id)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Edit Session</v-list-item-title>
-                  </v-list-item>
-                  
-                  <v-list-item v-if="canDelete" @click="$emit('delete-session', session._id)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-delete</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Delete Session</v-list-item-title>
-                  </v-list-item>
-                  
-                  <v-list-item v-if="canComplete" @click="$emit('complete-session', session._id)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-check</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Mark Complete</v-list-item-title>
-                  </v-list-item>
-                  
-                  <v-list-item v-if="canCancel" @click="$emit('cancel-session', session._id)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-cancel</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Cancel Session</v-list-item-title>
-                  </v-list-item>
-                  
-                  <v-list-item v-if="session.status === 'available'" @click="$emit('duplicate-session', session)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-content-copy</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Duplicate</v-list-item-title>
-                  </v-list-item>
-                  
-                  <v-list-item v-if="session.student" @click="$emit('contact-student', session)">
-                    <v-list-item-icon>
-                      <v-icon>mdi-email</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-title>Contact Student</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+              <div class="d-flex gap-2">
+                <v-btn 
+                  v-if="canEditSession(session)" 
+                  small 
+                  color="primary" 
+                  @click="$emit('edit-session', session._id)"
+                  elevation="1"
+                >
+                  <v-icon left small>mdi-pencil</v-icon>
+                  Edit
+                </v-btn>
+                <v-btn 
+                  v-if="canDeleteSession(session)" 
+                  small 
+                  color="error" 
+                  @click="$emit('delete-session', session._id)"
+                  elevation="1"
+                >
+                  <v-icon left small>mdi-delete</v-icon>
+                  Delete
+                </v-btn>
+              </div>
             </div>
           </v-card-title>
           
-          <v-card-text>
+          <v-card-text class="pt-0">
             <div class="mb-2">
-              <v-icon small class="mr-1">mdi-book-open-variant</v-icon>
-              {{ session.subject }}
+              <v-icon small class="mr-2" color="primary">mdi-calendar</v-icon>
+              <span class="text-body-2">{{ formatDate(session.date) }}</span>
+            </div>
+            
+            <div class="mb-2">
+              <v-icon small class="mr-2" color="primary">mdi-clock</v-icon>
+              <span class="text-body-2">{{ session.startTime }} - {{ session.endTime }}</span>
+            </div>
+            
+            <div class="mb-2">
+              <v-icon small class="mr-2" color="primary">mdi-timelapse</v-icon>
+              <span class="text-body-2">{{ session.duration }} minutes</span>
             </div>
             
             <div v-if="session.student" class="mb-2">
-              <v-icon small class="mr-1">mdi-account-school</v-icon>
-              Student: {{ session.student.name }}
+              <v-icon small class="mr-2" color="success">mdi-account-school</v-icon>
+              <span class="text-body-2">{{ session.student.name }}</span>
             </div>
             <div v-else class="mb-2">
-              <v-icon small class="mr-1">mdi-account-question</v-icon>
-              <span class="text-medium-emphasis">No student booked yet</span>
+              <v-icon small class="mr-2" color="orange">mdi-account-question</v-icon>
+              <span class="text-body-2 text--secondary">No student booked yet</span>
             </div>
-            
-            <div class="mb-2">
-              <v-icon small class="mr-1">mdi-calendar</v-icon>
-              {{ formatDate(session.date) }}
-            </div>
-            
-            <div class="mb-2">
-              <v-icon small class="mr-1">mdi-clock</v-icon>
-              {{ session.startTime }} - {{ session.endTime }}
-            </div>
-            
-            <div class="mb-2">
-              <v-icon small class="mr-1">mdi-timelapse</v-icon>
-              {{ session.duration }} minutes
-            </div>
-            
-            <div v-if="session.meetingLink" class="mb-2">
-              <v-icon small class="mr-1">mdi-video</v-icon>
-              <a :href="session.meetingLink" target="_blank" class="text-decoration-none">
-                Meeting Link
-              </a>
-            </div>
-            
-            <p v-if="session.description" class="text-body-2 mt-2">
-              {{ session.description }}
-            </p>
-            
-            <p v-if="session.notes" class="text-body-2 mt-2 font-italic">
-              Notes: {{ session.notes }}
-            </p>
           </v-card-text>
-          
-          <v-card-actions v-if="showQuickActions">
-            <v-spacer></v-spacer>
-            <v-btn 
-              v-if="session.status === 'booked' && isPastSession(session)"
-              color="success" 
-              small
-              @click="$emit('complete-session', session._id)"
-            >
-              <v-icon left>mdi-check</v-icon>
-              Complete
-            </v-btn>
-            <v-btn 
-              v-if="session.status === 'booked'"
-              color="error" 
-              small
-              @click="$emit('cancel-session', session._id)"
-            >
-              <v-icon left>mdi-cancel</v-icon>
-              Cancel
-            </v-btn>
-          </v-card-actions>
-          
-          <v-card-actions v-if="showRatings && session.status === 'completed'">
-            <v-spacer></v-spacer>
-            <div class="text-center">
-              <div v-if="session.rating">
-                <v-rating
-                  :value="session.rating"
-                  readonly
-                  size="small"
-                  color="amber"
-                ></v-rating>
-                <p class="text-caption">{{ session.rating }}/5</p>
-              </div>
-              <p v-else class="text-caption text-medium-emphasis">Not rated yet</p>
-            </div>
-          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -194,11 +110,35 @@ export default {
 
   computed: {
     canEdit() {
-      return ['available', 'all'].includes(this.status)
+      // Allow editing for available and booked sessions
+      return ['available', 'booked', 'all'].includes(this.status)
     },
     
     canDelete() {
+      // Allow deleting for available sessions only (not booked)
       return ['available', 'all'].includes(this.status)
+    }
+  },
+
+  mounted() {
+    // Component successfully mounted
+  },
+
+  methods: {
+    canEditSession(session) {
+      const now = new Date()
+      const sessionDate = new Date(session.date)
+      return sessionDate >= now && ['available', 'booked'].includes(session.status)
+    },
+    
+    canDeleteSession(session) {
+      return session.status === 'available'
+    },
+    
+    viewSessionDetails(session) {
+      console.log('Viewing session details:', session)
+      // For now, just log the session details
+      alert(`Session: ${session.title}\nStatus: ${session.status}\nDate: ${new Date(session.date).toLocaleDateString()}`)
     },
     
     canComplete() {
@@ -207,10 +147,8 @@ export default {
     
     canCancel() {
       return ['booked', 'all'].includes(this.status)
-    }
-  },
+    },
 
-  methods: {
     formatDate(date) {
       return new Date(date).toLocaleDateString('en-US', {
         weekday: 'long',
@@ -225,7 +163,8 @@ export default {
         available: 'success',
         booked: 'primary',
         completed: 'grey',
-        cancelled: 'error'
+        cancelled: 'error',
+        expired: 'orange'
       }
       return colors[status] || 'grey'
     },

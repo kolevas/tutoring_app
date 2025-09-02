@@ -35,6 +35,18 @@
                   </v-btn>
                 </template>
                 <v-list>
+                  <v-list-item v-if="canEditSession(session)" @click="$emit('edit-session', session._id)">
+                    <v-list-item-icon>
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-title>Edit Session</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item v-if="canDeleteSession(session)" @click="$emit('delete-session', session._id)">
+                    <v-list-item-icon>
+                      <v-icon>mdi-delete</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-title>Delete Session</v-list-item-title>
+                  </v-list-item>
                   <v-list-item v-if="canCancelSession(session)" @click="$emit('cancel-session', session._id)">
                     <v-list-item-icon>
                       <v-icon>mdi-cancel</v-icon>
@@ -119,10 +131,23 @@ export default {
       type: String,
       default: 'student'
     },
+    currentUserId: {
+      type: String,
+      required: false
+    },
     showRatings: {
       type: Boolean,
       default: false
     }
+  },
+
+  mounted() {
+    console.log('SessionsList mounted with:', {
+      sessionsCount: this.sessions?.length || 0,
+      currentUserId: this.currentUserId,
+      userRole: this.userRole,
+      sessions: this.sessions
+    })
   },
 
   methods: {
@@ -140,15 +165,40 @@ export default {
         available: 'success',
         booked: 'primary',
         completed: 'grey',
-        cancelled: 'error'
+        cancelled: 'error',
+        expired: 'orange'
       }
       return colors[status] || 'grey'
     },
 
     canModifySession(session) {
+      const tutorId = session.tutor?._id || session.tutor
+      const isOwner = tutorId === this.currentUserId
+      
+      // Simple debug for the first session only
+      if (session === this.sessions[0]) {
+        console.log('First session check:', { tutorId, currentUserId: this.currentUserId, isOwner, userRole: this.userRole })
+      }
+      
+      // Only show menu for sessions owned by current user (tutors) or for admins
+      return (this.userRole === 'tutor' && isOwner) || this.userRole === 'admin'
+    },
+
+    canEditSession(session) {
+      // Only tutors can edit their own sessions that are available or booked and in the future
       const now = new Date()
       const sessionDate = new Date(session.date)
-      return sessionDate >= now && ['available', 'booked'].includes(session.status)
+      const tutorId = session.tutor?._id || session.tutor
+      const isOwner = tutorId === this.currentUserId
+      return this.userRole === 'tutor' && isOwner && sessionDate >= now && ['available', 'booked'].includes(session.status)
+    },
+
+    canDeleteSession(session) {
+      // Only tutors can delete their own sessions that are available (not booked), or admins can delete any
+      const tutorId = session.tutor?._id || session.tutor
+      const isOwner = tutorId === this.currentUserId
+      if (this.userRole === 'admin') return true
+      return this.userRole === 'tutor' && isOwner && session.status === 'available'
     },
 
     canCancelSession(session) {

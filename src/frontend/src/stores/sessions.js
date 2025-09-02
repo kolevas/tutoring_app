@@ -22,8 +22,18 @@ export const useSessionStore = defineStore('sessions', {
     bookedSessions: (state) => state.sessions.filter(s => s.status === 'booked'),
 
     mySessions: (state) => (userId, role) => {
-      if (role === 'tutor') return state.sessions.filter(s => s.tutor._id === userId)
-      if (role === 'student') return state.sessions.filter(s => s.student?._id === userId)
+      if (role === 'tutor') {
+        return state.sessions.filter(s => {
+          const tutorId = s.tutor?._id || s.tutor
+          return tutorId === userId
+        })
+      }
+      if (role === 'student') {
+        return state.sessions.filter(s => {
+          const studentId = s.student?._id || s.student
+          return studentId === userId
+        })
+      }
       return []
     },
 

@@ -12,7 +12,7 @@
       :color="snackbar.color"
       :timeout="snackbar.timeout"
       location="top right"
-      variant="elevated"
+      variant="filled"
       class="notification-snackbar"
     >
       <div class="d-flex align-center">
@@ -49,7 +49,7 @@ export default {
     })
 
     const showNotification = (text, color = 'success', icon = 'mdi-check-circle') => {
-      console.log('Notification:', text, color)
+      // Debug: Notification triggered
     }
     
     provide('showNotification', showNotification)
@@ -117,11 +117,13 @@ export default {
 }
 
 /* Enhanced notification styling */
+.notification-snackbar .v-snackbar__content {
+  background: transparent !important;
+}
+
 .notification-snackbar {
-  backdrop-filter: blur(16px) !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
 }
 
 /* Disable animations on reduced motion preference */

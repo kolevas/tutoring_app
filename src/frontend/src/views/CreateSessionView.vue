@@ -1,14 +1,14 @@
 <template>
-  <v-container fluid>
+  <v-container fluid class="create-session-container">
     <v-row justify="center">
       <v-col cols="12" md="8" lg="6">
         <v-card elevation="4">
           <v-card-title class="primary white--text">
-            <v-icon class="mr-2">mdi-calendar-plus</v-icon>
-            Create New Tutoring Session
+            <v-icon class="mr-2">{{ $route.params.id ? 'mdi-pencil' : 'mdi-calendar-plus' }}</v-icon>
+            {{ $route.params.id ? 'Edit Tutoring Session' : 'Create New Tutoring Session' }}
           </v-card-title>
-          <v-card-subtitle class="white">
-            Set up a new session for students to book
+          <v-card-subtitle>
+            {{ $route.params.id ? 'Update session details' : 'Set up a new session for students to book' }}
           </v-card-subtitle>
 
           <v-card-text class="pt-6">
@@ -159,8 +159,8 @@
                     :loading="loading"
                     :disabled="!isFormValid"
                   >
-                    <v-icon class="mr-2">mdi-plus</v-icon>
-                    Create Session
+                    <v-icon class="mr-2">{{ $route.params.id ? 'mdi-content-save' : 'mdi-plus' }}</v-icon>
+                    {{ $route.params.id ? 'Update Session' : 'Create Session' }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -175,17 +175,20 @@
       <v-card>
         <v-card-title class="text-h5 success--text">
           <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
-          Session Created!
+          {{ $route.params.id ? 'Session Updated!' : 'Session Created!' }}
         </v-card-title>
         <v-card-text>
-          Your tutoring session has been created successfully. Students can now find and book it.
+          {{ $route.params.id 
+            ? 'Your tutoring session has been updated successfully.' 
+            : 'Your tutoring session has been created successfully. Students can now find and book it.' 
+          }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" @click="goToDashboard">
-            Go to Dashboard
+            {{ $route.params.id ? 'Back to My Sessions' : 'Go to Dashboard' }}
           </v-btn>
-          <v-btn color="secondary" @click="createAnother">
+          <v-btn v-if="!$route.params.id" color="secondary" @click="createAnother">
             Create Another
           </v-btn>
         </v-card-actions>
@@ -424,23 +427,39 @@ export default {
           status: 'available'
         }
 
-        const result = await this.sessionStore.createSession(sessionData)
+        const sessionId = this.$route.params.id
+        const isEditing = !!sessionId
+
+        let result
+        if (isEditing) {
+          // Update existing session
+          result = await this.sessionStore.updateSession(sessionId, sessionData)
+        } else {
+          // Create new session
+          result = await this.sessionStore.createSession(sessionData)
+        }
         
         if (result.success) {
           this.successDialog = true
         } else {
-          this.error = result.error || 'Failed to create session'
+          this.error = result.error || `Failed to ${isEditing ? 'update' : 'create'} session`
         }
       } catch (error) {
-        this.error = 'An error occurred while creating the session'
-        console.error('Create session error:', error)
+        this.error = `An error occurred while ${this.$route.params.id ? 'updating' : 'creating'} the session`
+        console.error('Create/Update session error:', error)
       } finally {
         this.loading = false
       }
     },
 
     goToDashboard() {
-      this.$router.push('/dashboard')
+      if (this.$route.params.id) {
+        // If editing, go back to My Sessions
+        this.$router.push('/my-sessions')
+      } else {
+        // If creating, go to dashboard
+        this.$router.push('/dashboard')
+      }
     },
 
     createAnother() {
@@ -466,10 +485,32 @@ export default {
   },
 
   async mounted() {
-    // Set default date to tomorrow
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    this.form.date = tomorrow.toISOString().split('T')[0]
+    // Check if we're editing an existing session
+    const sessionId = this.$route.params.id
+    const isEditing = !!sessionId
+    
+    if (isEditing) {
+      // Load session data for editing
+      await this.sessionStore.fetchSessions()
+      const session = this.sessionStore.sessions.find(s => s._id === sessionId)
+      if (session) {
+        this.form = {
+          title: session.title || '',
+          subject: session.subject || '',
+          description: session.description || '',
+          date: session.date ? session.date.split('T')[0] : '',
+          startTime: session.startTime || '',
+          endTime: session.endTime || '',
+          meetingLink: session.meetingLink || '',
+          notes: session.notes || ''
+        }
+      }
+    } else {
+      // Set default date to tomorrow for new sessions
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      this.form.date = tomorrow.toISOString().split('T')[0]
+    }
 
     // Pre-fill subjects based on tutor's expertise
     if (this.authStore.user && this.authStore.user.subjects) {
@@ -493,6 +534,11 @@ export default {
 </script>
 
 <style scoped>
+.create-session-container {
+  min-height: calc(100vh - 100px);
+  padding-top: 20px;
+}
+
 .v-card {
   border-radius: 12px;
 }

@@ -111,7 +111,7 @@ export default {
       return this.allMySessions.filter(session => session.status === 'booked')
     },
     completedSessions() {
-      return this.allMySessions.filter(session => session.status === 'completed')
+      return this.allMySessions.filter(session => ['completed', 'cancelled', 'expired'].includes(session.status))
     },
     filteredSessions() {
       if (this.activeTab === 'available') return this.availableSessions
@@ -131,20 +131,19 @@ export default {
     },
 
     editSession(sessionId) {
-      // For now, redirect to create session with session data for editing
-      this.$router.push({ 
-        path: '/sessions/create', 
-        query: { edit: sessionId } 
-      })
+      // Redirect to edit session route
+      this.$router.push(`/sessions/edit/${sessionId}`)
     },
 
     async deleteSession(sessionId) {
       if (confirm('Are you sure you want to delete this session?')) {
         const result = await this.sessionStore.deleteSession(sessionId)
         if (result.success) {
-          console.log('Session deleted successfully')
+          // Session deleted successfully, refresh the data
+          await this.loadMySessions()
         } else {
           console.error('Failed to delete session:', result.error)
+          alert('Failed to delete session. Please try again.')
         }
       }
     },
@@ -152,7 +151,7 @@ export default {
     async completeSession(sessionId) {
       const result = await this.sessionStore.updateSession(sessionId, { status: 'completed' })
       if (result.success) {
-        console.log('Session marked as completed')
+        // Session marked as completed
       } else {
         console.error('Failed to update session:', result.error)
       }
@@ -161,7 +160,7 @@ export default {
     async cancelSession(sessionId) {
       const result = await this.sessionStore.cancelBooking(sessionId)
       if (result.success) {
-        console.log('Session cancelled successfully')
+        // Session cancelled successfully
       } else {
         console.error('Failed to cancel session:', result.error)
       }

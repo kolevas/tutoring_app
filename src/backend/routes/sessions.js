@@ -5,11 +5,42 @@ const Availability = require('../models/Availability');
 const { protect, authorize } = require('../middleware/auth');
 const router = express.Router();
 
+// Utility function to mark expired sessions
+const markExpiredSessions = async () => {
+  try {
+    const now = new Date();
+    
+    // Find sessions that have passed their date and are still available or booked
+    const expiredSessions = await Session.find({
+      date: { $lt: now },
+      status: { $in: ['available', 'booked'] }
+    });
+
+    // Update them to expired status
+    if (expiredSessions.length > 0) {
+      await Session.updateMany(
+        {
+          date: { $lt: now },
+          status: { $in: ['available', 'booked'] }
+        },
+        { status: 'expired' }
+      );
+      
+      console.log(`Marked ${expiredSessions.length} sessions as expired`);
+    }
+  } catch (error) {
+    console.error('Error marking expired sessions:', error);
+  }
+};
+
 // @desc    Get all sessions
 // @route   GET /api/sessions
 // @access  Private
 const getSessions = async (req, res) => {
   try {
+    // First, mark any expired sessions
+    await markExpiredSessions();
+    
     const { status, tutor, student, date } = req.query;
     let query = {};
 
@@ -443,6 +474,9 @@ const updateAvailability = async (req, res) => {
 // @access  Public
 const getAvailableSessions = async (req, res) => {
   try {
+    // First, mark any expired sessions
+    await markExpiredSessions();
+    
     const { subject, date, tutor } = req.query;
     let query = { status: 'available' };
 

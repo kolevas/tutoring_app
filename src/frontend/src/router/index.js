@@ -72,6 +72,12 @@ const router = createRouter({
           meta: { roles: ['tutor', 'admin'] }
         },
         {
+          path: '/sessions/edit/:id',
+          name: 'EditSession',
+          component: () => import('../views/CreateSessionView.vue'),
+          meta: { roles: ['tutor', 'admin'] }
+        },
+        {
           path: '/availability',
           name: 'Availability',
           component: () => import('../views/AvailabilityView.vue'),

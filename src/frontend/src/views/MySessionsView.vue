@@ -54,6 +54,9 @@
             <SessionsList 
               :sessions="upcomingSessions" 
               :user-role="authStore.user?.role"
+              :current-user-id="authStore.user?._id"
+              @edit-session="editSession"
+              @delete-session="deleteSession"
               @cancel-session="cancelSession"
               @complete-session="completeSession"
             />
@@ -64,6 +67,7 @@
             <SessionsList 
               :sessions="pastSessions" 
               :user-role="authStore.user?.role"
+              :current-user-id="authStore.user?._id"
               show-ratings
             />
           </v-tabs-window-item>
@@ -151,9 +155,10 @@ export default {
 
   computed: {
     allMySessions() {
-      if (!this.authStore.user) return []
-      
-      return this.sessionStore.mySessions(this.authStore.user._id, this.authStore.user.role)
+      // Since we're already filtering on the backend, just return all sessions
+      const sessions = this.sessionStore.sessions || []
+      console.log('allMySessions computed:', sessions.length, sessions)
+      return sessions
     },
 
     upcomingSessions() {
@@ -168,7 +173,7 @@ export default {
       const now = new Date()
       return this.allMySessions.filter(session => {
         const sessionDate = new Date(session.date)
-        return sessionDate < now || ['completed', 'cancelled'].includes(session.status)
+        return sessionDate < now || ['completed', 'cancelled', 'expired'].includes(session.status)
       }).sort((a, b) => new Date(b.date) - new Date(a.date))
     },
 
@@ -180,16 +185,45 @@ export default {
   methods: {
     async loadMySessions() {
       try {
-        await this.sessionStore.fetchSessions()
+        console.log('Loading my sessions for user:', this.authStore.user)
+        
+        // Fetch sessions with user-specific filtering
+        const params = {}
+        if (this.authStore.user?.role === 'tutor') {
+          params.tutor = this.authStore.user._id
+        } else if (this.authStore.user?.role === 'student') {
+          params.student = this.authStore.user._id
+        }
+        
+        console.log('Fetching sessions with params:', params)
+        await this.sessionStore.fetchSessions(params)
+        console.log('Sessions loaded:', this.sessionStore.sessions)
       } catch (error) {
         console.error('Error loading sessions:', error)
+      }
+    },
+
+    editSession(sessionId) {
+      this.$router.push(`/sessions/edit/${sessionId}`)
+    },
+
+    async deleteSession(sessionId) {
+      if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+        const result = await this.sessionStore.deleteSession(sessionId)
+        if (result.success) {
+          // Session deleted successfully, refresh the data
+          await this.loadMySessions()
+        } else {
+          console.error('Failed to delete session:', result.error)
+          alert('Failed to delete session. Please try again.')
+        }
       }
     },
 
     async cancelSession(sessionId) {
       const result = await this.sessionStore.cancelBooking(sessionId)
       if (result.success) {
-        console.log('Session cancelled successfully')
+        // Session cancelled successfully
       } else {
         console.error('Failed to cancel session:', result.error)
       }
@@ -198,7 +232,7 @@ export default {
     async completeSession(sessionId) {
       const result = await this.sessionStore.updateSession(sessionId, { status: 'completed' })
       if (result.success) {
-        console.log('Session marked as completed')
+        // Session marked as completed
       } else {
         console.error('Failed to update session:', result.error)
       }
@@ -206,6 +240,9 @@ export default {
   },
 
   async mounted() {
+    console.log('MySessionsView mounted!')
+    console.log('Auth user:', this.authStore.user)
+    console.log('Initial sessions:', this.sessionStore.sessions)
     await this.loadMySessions()
   }
 }
