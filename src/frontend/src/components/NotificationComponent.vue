@@ -45,7 +45,8 @@
         <v-btn
           icon
           v-bind="props"
-          class="notification-bell"
+          class="notification-bell header-btn"
+          variant="text"
           aria-label="Notifications"
         >
           <v-badge
@@ -209,24 +210,6 @@ export default {
   border-radius: 14px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
   background: #fff;
-}
-
-.notification-bell {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.notification-bell .v-icon {
-  color: rgba(var(--v-theme-on-surface), 0.7);
-  transition: color 0.2s;
-}
-
-.notification-bell:hover {
-  background: rgba(var(--v-theme-on-surface), 0.04) !important;
-}
-
-.notification-bell:hover .v-icon {
-  color: rgba(var(--v-theme-on-surface), 1) !important;
 }
 
 .navbar-dropdown-menu {

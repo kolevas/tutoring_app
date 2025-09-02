@@ -300,6 +300,7 @@
 <script>
 import { useAuthStore } from '../stores/auth'
 import { useUserStore } from '../stores/users'
+import { eventBus } from '../utils/eventBus'
 
 export default {
   name: 'ProfileView',
@@ -462,7 +463,7 @@ export default {
 
     changeAvatar() {
       // Placeholder for avatar change functionality
-      this.$root.$emit('showSnackbar', 'Avatar change feature coming soon!', 'info')
+      eventBus.emit('showSnackbar', 'Avatar change feature coming soon!', 'info')
     },
 
     async changePassword() {
@@ -482,9 +483,9 @@ export default {
           newPassword: '',
           confirmPassword: ''
         }
-        this.$root.$emit('showSnackbar', 'Password changed successfully!', 'success')
+        eventBus.emit('showSnackbar', 'Password changed successfully!', 'success')
       } catch (error) {
-        this.$root.$emit('showSnackbar', 'Failed to change password', 'error')
+        eventBus.emit('showSnackbar', 'Failed to change password', 'error')
       } finally {
         this.changingPassword = false
       }

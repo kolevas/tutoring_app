@@ -434,6 +434,7 @@
 import { useUserStore } from '../../stores/users'
 import { useAuthStore } from '../../stores/auth'
 import CreateUserDialog from '../../components/CreateUserDialog.vue'
+import { eventBus } from '../../utils/eventBus'
 
 export default {
   name: 'AdminUsersView',
@@ -575,10 +576,10 @@ export default {
       try {
         const result = await this.userStore.updateUser(user._id, { isActive: !user.isActive })
         if (result.success) {
-          this.$root.$emit('showSnackbar', `User ${user.isActive ? 'deactivated' : 'activated'} successfully`, 'success')
+          eventBus.emit('showSnackbar', `User ${user.isActive ? 'deactivated' : 'activated'} successfully`, 'success')
         }
       } catch (error) {
-        this.$root.$emit('showSnackbar', 'Failed to update user status', 'error')
+        eventBus.emit('showSnackbar', 'Failed to update user status', 'error')
       }
     },
 
@@ -593,14 +594,14 @@ export default {
       try {
         const result = await this.userStore.deleteUser(this.userToDelete._id)
         if (result.success) {
-          this.$root.$emit('showSnackbar', 'User deleted successfully', 'success')
+          eventBus.emit('showSnackbar', 'User deleted successfully', 'success')
           this.showDeleteDialog = false
           this.userToDelete = null
         } else {
-          this.$root.$emit('showSnackbar', result.error, 'error')
+          eventBus.emit('showSnackbar', result.error, 'error')
         }
       } catch (error) {
-        this.$root.$emit('showSnackbar', 'Failed to delete user', 'error')
+        eventBus.emit('showSnackbar', 'Failed to delete user', 'error')
       } finally {
         this.deleting = false
       }
@@ -612,10 +613,10 @@ export default {
       try {
         const result = await this.userStore.updateUser(this.selectedUser._id, this.selectedUser)
         if (result.success) {
-          this.$root.$emit('showSnackbar', 'User updated successfully', 'success')
+          eventBus.emit('showSnackbar', 'User updated successfully', 'success')
           this.closeUserDialog()
         } else {
-          this.$root.$emit('showSnackbar', result.error, 'error')
+          eventBus.emit('showSnackbar', result.error, 'error')
         }
       } catch (error) {
         this.$root.$emit('showSnackbar', 'Failed to update user', 'error')

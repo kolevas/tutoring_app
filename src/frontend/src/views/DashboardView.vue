@@ -111,7 +111,7 @@
                     label="Total Sessions" 
                     :value="sessionStats.total" 
                     variant="primary"
-                    :trend="{ type: 'up', value: '+12%' }"
+                    :trend="sessionStats.totalTrend"
                     :animation="'fade-up'"
                     :animation-delay="0"
                   />
@@ -122,18 +122,18 @@
                     label="Active Bookings" 
                     :value="sessionStats.booked" 
                     variant="success"
-                    :trend="{ type: 'up', value: '+8%' }"
+                    :trend="sessionStats.bookedTrend"
                     :animation="'fade-up'"
                     :animation-delay="100"
                   />
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                   <StatCard 
-                    icon="mdi-teach" 
+                    icon="mdi-account-group" 
                     label="Active Tutors" 
                     :value="userStats.tutors" 
                     variant="info"
-                    :trend="{ type: 'up', value: '+3%' }"
+                    :trend="userStats.tutorsTrend"
                     :animation="'fade-up'"
                     :animation-delay="200"
                   />
@@ -144,7 +144,7 @@
                     label="Active Students" 
                     :value="userStats.students" 
                     variant="secondary"
-                    :trend="{ type: 'up', value: '+15%' }"
+                    :trend="userStats.studentsTrend"
                     :animation="'fade-up'"
                     :animation-delay="300"
                   />
@@ -299,7 +299,7 @@ export default {
     roleIcon() {
       switch(this.authStore.userRole) {
         case 'student': return 'mdi-account-school'
-        case 'tutor': return 'mdi-teach'
+        case 'tutor': return 'mdi-account-tie'
         case 'admin': return 'mdi-shield-account'
         default: return 'mdi-account'
       }
@@ -341,16 +341,49 @@ export default {
     },
     sessionStats() {
       const sessions = this.sessionStore.sessions || []
+      const total = sessions.length
+      const booked = sessions.filter(s => s.status === 'booked').length
+      const available = sessions.filter(s => s.status === 'available').length
+      const completed = sessions.filter(s => s.status === 'completed').length
+
+      // Calculate trends (mock data for now - in real app, you'd compare with previous period)
+      const totalTrend = total > 0 ? { type: 'up', value: '+12%' } : null
+      const bookedTrend = booked > 0 ? { type: 'up', value: `+${Math.round((booked/total) * 100)}%` } : null
+
       return {
-        total: sessions.length,
-        booked: sessions.filter(s => s.status === 'booked').length
+        total,
+        booked,
+        available,
+        completed,
+        totalTrend,
+        bookedTrend
       }
     },
     userStats() {
       const users = this.userStore.users || []
+      const total = users.length
+      const tutors = users.filter(u => u.role === 'tutor').length
+      const students = users.filter(u => u.role === 'student').length
+      const activeTutors = users.filter(u => u.role === 'tutor' && u.isActive !== false).length
+      const activeStudents = users.filter(u => u.role === 'student' && u.isActive !== false).length
+
+      // Calculate trends based on percentages
+      const tutorsTrend = tutors > 0 ? { 
+        type: 'up', 
+        value: `+${Math.round((activeTutors/total) * 100)}%` 
+      } : null
+      
+      const studentsTrend = students > 0 ? { 
+        type: 'up', 
+        value: `+${Math.round((activeStudents/total) * 100)}%` 
+      } : null
+
       return {
-        tutors: users.filter(u => u.role === 'tutor').length,
-        students: users.filter(u => u.role === 'student').length
+        tutors: activeTutors,
+        students: activeStudents,
+        total,
+        tutorsTrend,
+        studentsTrend
       }
     }
   },

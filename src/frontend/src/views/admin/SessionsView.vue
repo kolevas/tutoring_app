@@ -404,6 +404,7 @@
 <script>
 import { useSessionStore } from '../../stores/sessions'
 import StatCard from '../../components/StatCard.vue'
+import { eventBus } from '../../utils/eventBus'
 
 export default {
   name: 'AdminSessionsView',
@@ -421,19 +422,19 @@ export default {
     formatDate(d){ return new Date(d).toLocaleDateString('en-US',{ year:'numeric', month:'short', day:'numeric'}) },
     viewSession(s){ this.selectedSession={...s}; this.sessionChanged=false; this.showSessionDialog=true },
     editSession(s){ this.selectedSession={...s}; this.sessionChanged=false; this.showSessionDialog=true },
-    async cancelSession(s){ try { const result=await this.sessionStore.cancelBooking(s._id); this.$root.$emit('showSnackbar', result.success? 'Session booking cancelled':'Failed to cancel', result.success?'success':'error') } catch(e){ this.$root.$emit('showSnackbar','Failed to cancel session','error') } },
+    async cancelSession(s){ try { const result=await this.sessionStore.cancelBooking(s._id); eventBus.emit('showSnackbar', result.success? 'Session booking cancelled':'Failed to cancel', result.success?'success':'error') } catch(e){ eventBus.emit('showSnackbar','Failed to cancel session','error') } },
     deleteSession(s){ this.sessionToDelete=s; this.showDeleteDialog=true },
-    async confirmDelete(){ if(!this.sessionToDelete) return; this.deleting=true; try { const r=await this.sessionStore.deleteSession(this.sessionToDelete._id); this.$root.$emit('showSnackbar', r.success? 'Session deleted':'Failed to delete', r.success?'success':'error'); if(r.success){ this.showDeleteDialog=false; this.sessionToDelete=null } } finally { this.deleting=false } },
-    async saveSession(){ if(!this.selectedSession||!this.sessionChanged) return; this.saving=true; try { const r=await this.sessionStore.updateSession(this.selectedSession._id, this.selectedSession); this.$root.$emit('showSnackbar', r.success? 'Session updated':'Failed to update', r.success?'success':'error'); if(r.success) this.closeSessionDialog() } finally { this.saving=false } },
+    async confirmDelete(){ if(!this.sessionToDelete) return; this.deleting=true; try { const r=await this.sessionStore.deleteSession(this.sessionToDelete._id); eventBus.emit('showSnackbar', r.success? 'Session deleted':'Failed to delete', r.success?'success':'error'); if(r.success){ this.showDeleteDialog=false; this.sessionToDelete=null } } finally { this.deleting=false } },
+    async saveSession(){ if(!this.selectedSession||!this.sessionChanged) return; this.saving=true; try { const r=await this.sessionStore.updateSession(this.selectedSession._id, this.selectedSession); eventBus.emit('showSnackbar', r.success? 'Session updated':'Failed to update', r.success?'success':'error'); if(r.success) this.closeSessionDialog() } finally { this.saving=false } },
     closeSessionDialog(){ this.showSessionDialog=false; this.selectedSession=null; this.sessionChanged=false },
-    async refreshSessions(){ await this.sessionStore.fetchSessions(); this.$root.$emit('showSnackbar','Sessions refreshed','success') },
+    async refreshSessions(){ await this.sessionStore.fetchSessions(); eventBus.emit('showSnackbar','Sessions refreshed','success') },
     clearFilters(){ this.searchQuery=this.statusFilter=this.subjectFilter=this.dateFilter='' },
     exportSessions(){ 
       // Simple CSV export
       const headers=['Title','Subject','Tutor','Student','Date','Time','Status','Price'];
       const rows=this.filteredSessions.map(s=> [s.title,s.subject,s.tutor?.name||'',s.student?.name||'',this.formatDate(s.date),`${s.startTime}-${s.endTime}`,s.status,s.price||0]);
       const csv=[headers,...rows].map(r=> r.map(f=>`"${f}"`).join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`sessions-${new Date().toISOString().split('T')[0]}.csv`; a.click(); URL.revokeObjectURL(url); this.$root.$emit('showSnackbar','Sessions exported successfully','success'); }
+      const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`sessions-${new Date().toISOString().split('T')[0]}.csv`; a.click(); URL.revokeObjectURL(url); eventBus.emit('showSnackbar','Sessions exported successfully','success'); }
   },
   async mounted(){ await this.sessionStore.fetchSessions() }
 }
