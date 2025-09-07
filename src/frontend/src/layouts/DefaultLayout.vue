@@ -243,8 +243,7 @@ export default {
         items.push(
           { title: 'My Sessions', icon: 'mdi-calendar', to: '/tutor-sessions' },
           { title: 'Create Session', icon: 'mdi-calendar-plus', to: '/sessions/create' },
-          { title: 'Availability', icon: 'mdi-calendar-clock', to: '/availability' },
-          { title: 'Students', icon: 'mdi-account-group', to: '/students' }
+          { title: 'Availability', icon: 'mdi-calendar-clock', to: '/availability' }
         )
       }
       

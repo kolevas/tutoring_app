@@ -326,8 +326,7 @@ export default {
         actions.push(
           { title: 'Create Session', description: 'Add new tutoring session', icon: 'mdi-calendar-plus', route: '/sessions/create' },
           { title: 'My Sessions', description: 'Manage your sessions', icon: 'mdi-calendar', route: '/tutor-sessions' },
-          { title: 'Set Availability', description: 'Configure your schedule', icon: 'mdi-calendar-clock', route: '/availability' },
-          { title: 'My Students', description: 'View your students', icon: 'mdi-account-group', route: '/students' }
+          { title: 'Set Availability', description: 'Configure your schedule', icon: 'mdi-calendar-clock', route: '/availability' }
         )
       }
       if (this.authStore.isAdmin) {
@@ -407,12 +406,17 @@ export default {
         
         if (this.authStore.isStudent) {
           await this.sessionStore.fetchSessions({ student: this.authStore.user._id })
-          this.myBookings = this.sessionStore.sessions.filter(s => s.status === 'booked').slice(0, 5)
+          this.myBookings = this.sessionStore.sessions
+            .filter(s => s.status === 'booked')
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5)
         }
         
         if (this.authStore.isTutor) {
           await this.sessionStore.fetchSessions({ tutor: this.authStore.user._id })
-          this.mySessions = this.sessionStore.sessions.slice(0, 5)
+          this.mySessions = this.sessionStore.sessions
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5)
         }
         
         if (this.authStore.isAdmin) {

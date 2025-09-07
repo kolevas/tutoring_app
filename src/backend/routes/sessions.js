@@ -3,6 +3,7 @@ const Session = require('../models/Session');
 const User = require('../models/User');
 const Availability = require('../models/Availability');
 const { protect, authorize } = require('../middleware/auth');
+const NotificationService = require('../services/notificationService');
 const router = express.Router();
 
 // Utility function to mark expired sessions
@@ -185,6 +186,40 @@ const createSession = async (req, res) => {
     // Populate the created session
     await session.populate('tutor', 'name email subjects');
 
+    // Create notification for tutor about session creation
+    try {
+      await NotificationService.createSessionNotification(
+        req.user.id,
+        session,
+        'created',
+        `New session "${session.title}" created for ${new Date(session.date).toLocaleDateString()} from ${session.startTime} to ${session.endTime}`
+      );
+    } catch (notificationError) {
+      console.error('Failed to create session creation notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
+
+    // Optionally notify interested students about new session
+    // For now, we'll skip this to avoid spamming all students
+    // In a real app, you'd have a preference system for students to opt-in
+    /*
+    try {
+      const interestedStudents = await User.find({ 
+        role: 'student',
+        // Add logic here to find students interested in this subject
+      }).select('_id');
+      
+      if (interestedStudents.length > 0) {
+        await NotificationService.newSessionAvailable(
+          session, 
+          interestedStudents.map(s => s._id)
+        );
+      }
+    } catch (notificationError) {
+      console.error('Failed to create new session notifications:', notificationError);
+    }
+    */
+
     res.status(201).json({
       success: true,
       data: session
@@ -277,7 +312,7 @@ const deleteSession = async (req, res) => {
 // @access  Private (Student)
 const bookSession = async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    const session = await Session.findById(req.params.id).populate('tutor', 'name email');
 
     if (!session) {
       return res.status(404).json({
@@ -301,6 +336,18 @@ const bookSession = async (req, res) => {
       .populate('tutor', 'name email subjects')
       .populate('student', 'name email');
 
+    // Create notifications for both tutor and student
+    try {
+      await NotificationService.sessionBooked(
+        populatedSession, 
+        populatedSession.tutor._id, 
+        populatedSession.student._id
+      );
+    } catch (notificationError) {
+      console.error('Failed to create booking notifications:', notificationError);
+      // Don't fail the booking if notification creation fails
+    }
+
     res.json({
       success: true,
       data: populatedSession
@@ -318,7 +365,9 @@ const bookSession = async (req, res) => {
 // @access  Private
 const cancelBooking = async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    const session = await Session.findById(req.params.id)
+      .populate('tutor', 'name email')
+      .populate('student', 'name email');
 
     if (!session) {
       return res.status(404).json({
@@ -328,8 +377,8 @@ const cancelBooking = async (req, res) => {
     }
 
     // Check if user is the student who booked or tutor or admin
-    if (session.student.toString() !== req.user.id && 
-        session.tutor.toString() !== req.user.id && 
+    if (session.student._id.toString() !== req.user.id && 
+        session.tutor._id.toString() !== req.user.id && 
         req.user.role !== 'admin') {
       return res.status(401).json({
         success: false,
@@ -337,9 +386,36 @@ const cancelBooking = async (req, res) => {
       });
     }
 
+    // Store original data for notifications
+    const originalStudent = session.student;
+    const originalTutor = session.tutor;
+    const cancelledByRole = req.user.role;
+    const cancelledByUserId = req.user.id;
+
+    // Determine who to notify (the other party)
+    let affectedUserId;
+    if (cancelledByUserId === session.student._id.toString()) {
+      affectedUserId = session.tutor._id;
+    } else {
+      affectedUserId = session.student._id;
+    }
+
     session.student = null;
     session.status = 'available';
     await session.save();
+
+    // Create cancellation notification
+    try {
+      await NotificationService.sessionCancelled(
+        session,
+        cancelledByUserId,
+        affectedUserId,
+        cancelledByRole
+      );
+    } catch (notificationError) {
+      console.error('Failed to create cancellation notifications:', notificationError);
+      // Don't fail the cancellation if notification creation fails
+    }
 
     res.json({
       success: true,

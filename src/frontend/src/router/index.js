@@ -83,12 +83,6 @@ const router = createRouter({
           component: () => import('../views/AvailabilityView.vue'),
           meta: { roles: ['tutor'] }
         },
-        {
-          path: '/students',
-          name: 'Students',
-          component: () => import('../views/StudentsView.vue'),
-          meta: { roles: ['tutor'] }
-        },
         
         // Admin routes
         {

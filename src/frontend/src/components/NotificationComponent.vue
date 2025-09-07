@@ -1,38 +1,42 @@
 <template>
   <div class="notification-container">
-    <!-- Toast Notifications -->
-    <v-snackbar
-      v-for="notification in visibleNotifications"
-      :key="notification.id"
-      v-model="notification.show"
-      :color="notification.type"
-      :timeout="notification.timeout"
-      location="top right"
-      multi-line
-      vertical
-      class="notification-snackbar"
-      :style="{ 'z-index': 10000 + notification.id }"
-    >
-      <div class="d-flex align-center">
-        <v-icon class="mr-3">{{ getIcon(notification.type) }}</v-icon>
-        <div class="flex-grow-1">
-          <div class="font-weight-medium">{{ notification.title }}</div>
-          <div v-if="notification.message" class="text-caption">
-            {{ notification.message }}
+    <!-- Custom Toast Notifications -->
+    <div class="notification-toasts">
+      <transition-group name="notification" tag="div">
+        <div
+          v-for="notification in visibleNotifications"
+          :key="notification.id"
+          :class="[
+            'notification-toast',
+            `notification-toast--${notification.type}`
+          ]"
+          :style="{ 'z-index': 10000 + notification.id }"
+        >
+          <div class="notification-content">
+            <div class="d-flex align-center">
+              <v-icon class="mr-3" :color="getTypeColor(notification.type)">
+                {{ getIcon(notification.type) }}
+              </v-icon>
+              <div class="flex-grow-1">
+                <div class="notification-title">{{ notification.title }}</div>
+                <div v-if="notification.message" class="notification-message">
+                  {{ notification.message }}
+                </div>
+              </div>
+              <v-btn
+                variant="text"
+                size="small"
+                icon
+                @click="dismissNotification(notification.id)"
+                class="notification-close"
+              >
+                <v-icon size="small">mdi-close</v-icon>
+              </v-btn>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <template v-slot:actions>
-        <v-btn
-          variant="text"
-          size="small"
-          @click="dismissNotification(notification.id)"
-        >
-          <v-icon size="small">mdi-close</v-icon>
-        </v-btn>
-      </template>
-    </v-snackbar>
+      </transition-group>
+    </div>
 
     <!-- Notification Bell Icon -->
     <v-menu
@@ -108,7 +112,7 @@
               {{ notification.message }}
             </v-list-item-subtitle>
             <v-list-item-subtitle>
-              {{ formatTime(notification.timestamp) }}
+              {{ formatTime(notification.createdAt) }}
             </v-list-item-subtitle>
             
             <template v-slot:append v-if="!notification.read">
@@ -138,7 +142,8 @@ export default {
   
   data() {
     return {
-      showNotificationMenu: false
+      showNotificationMenu: false,
+      notificationInterval: null
     }
   },
   
@@ -170,14 +175,32 @@ export default {
       return icons[type] || 'mdi-information'
     },
     
+    getTypeColor(type) {
+      const colors = {
+        success: 'success',
+        error: 'error',
+        warning: 'warning',
+        info: 'info'
+      }
+      return colors[type] || 'info'
+    },
+    
     formatTime(timestamp) {
+      if (!timestamp) return 'Invalid Date'
+      
       const now = new Date()
       const time = new Date(timestamp)
+      
+      // Check if the date is valid
+      if (isNaN(time.getTime())) {
+        return 'Invalid Date'
+      }
+      
       const diffInHours = (now - time) / (1000 * 60 * 60)
       
       if (diffInHours < 1) {
         const diffInMinutes = Math.floor((now - time) / (1000 * 60))
-        return `${diffInMinutes}m ago`
+        return diffInMinutes <= 0 ? 'Just now' : `${diffInMinutes}m ago`
       } else if (diffInHours < 24) {
         return `${Math.floor(diffInHours)}h ago`
       } else {
@@ -196,6 +219,33 @@ export default {
     markAllAsRead() {
       this.notificationStore.markAllAsRead()
     }
+  },
+  
+  mounted() {
+    // Fetch notifications from backend but don't show as toasts on page load
+    this.notificationStore.fetchNotifications()
+    
+    // Auto-dismiss notifications after timeout
+    this.$watch('visibleNotifications', (newNotifications) => {
+      newNotifications.forEach(notification => {
+        if (notification.show && notification.timeout > 0) {
+          setTimeout(() => {
+            this.dismissNotification(notification.id || notification._id)
+          }, notification.timeout)
+        }
+      })
+    }, { immediate: true, deep: true })
+    
+    // Periodically check for new notifications (every 30 seconds)
+    this.notificationInterval = setInterval(() => {
+      this.notificationStore.fetchUnreadCount()
+    }, 30000)
+  },
+  
+  beforeUnmount() {
+    if (this.notificationInterval) {
+      clearInterval(this.notificationInterval)
+    }
   }
 }
 </script>
@@ -205,11 +255,90 @@ export default {
   position: relative;
 }
 
-.notification-snackbar {
-  margin-top: 60px;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-  background: #fff;
+.notification-toasts {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 10000;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.notification-toast {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  overflow: hidden;
+  max-width: 400px;
+  min-width: 320px;
+}
+
+.notification-toast--success {
+  border-left: 4px solid #4CAF50;
+}
+
+.notification-toast--error {
+  border-left: 4px solid #F44336;
+}
+
+.notification-toast--warning {
+  border-left: 4px solid #FF9800;
+}
+
+.notification-toast--info {
+  border-left: 4px solid #2196F3;
+}
+
+.notification-content {
+  padding: 16px;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  line-height: 1.3;
+}
+
+.notification-close {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+/* Transition animations */
+.notification-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.notification-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.notification-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-move {
+  transition: transform 0.3s ease;
 }
 
 .navbar-dropdown-menu {

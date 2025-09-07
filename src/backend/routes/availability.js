@@ -3,6 +3,7 @@ const router = express.Router();
 const Availability = require('../models/Availability');
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
+const NotificationService = require('../services/notificationService');
 
 // @desc    Get all availability slots for a tutor
 // @route   GET /api/availability/:tutorId?
@@ -65,21 +66,62 @@ router.post('/', protect, authorize('tutor'), async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!dayOfWeek || !startTime || !endTime) {
+    if (!startTime || !endTime) {
       return res.status(400).json({
         success: false,
-        message: 'Day of week, start time, and end time are required'
+        message: 'Start time and end time are required'
       });
     }
 
-    // Check if slot already exists
-    const existingSlot = await Availability.findOne({
+    // For recurring availability, dayOfWeek is required
+    if (isRecurring !== false && !dayOfWeek) {
+      return res.status(400).json({
+        success: false,
+        message: 'Day of week is required for recurring availability'
+      });
+    }
+
+    // For non-recurring availability, specificDate is required
+    if (isRecurring === false && !specificDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Specific date is required for non-recurring availability'
+      });
+    }
+
+    // Prepare the availability data
+    const availabilityData = {
       tutor: req.user._id,
-      dayOfWeek,
       startTime,
       endTime,
-      specificDate
-    });
+      isRecurring: isRecurring !== undefined ? isRecurring : true,
+      specificDate: specificDate || null,
+      timezone: timezone || 'UTC'
+    };
+
+    // Only include dayOfWeek for recurring availability
+    if (isRecurring !== false && dayOfWeek) {
+      availabilityData.dayOfWeek = dayOfWeek;
+    }
+
+    // Check if slot already exists
+    const existingSlotQuery = {
+      tutor: req.user._id,
+      startTime,
+      endTime
+    };
+
+    if (isRecurring !== false) {
+      // For recurring slots, check dayOfWeek
+      existingSlotQuery.dayOfWeek = dayOfWeek;
+      existingSlotQuery.isRecurring = { $ne: false };
+    } else {
+      // For non-recurring slots, check specificDate
+      existingSlotQuery.specificDate = specificDate;
+      existingSlotQuery.isRecurring = false;
+    }
+
+    const existingSlot = await Availability.findOne(existingSlotQuery);
 
     if (existingSlot) {
       return res.status(400).json({
@@ -88,18 +130,28 @@ router.post('/', protect, authorize('tutor'), async (req, res) => {
       });
     }
 
-    const availability = new Availability({
-      tutor: req.user._id,
-      dayOfWeek,
-      startTime,
-      endTime,
-      isRecurring: isRecurring !== undefined ? isRecurring : true,
-      specificDate: specificDate || null,
-      timezone: timezone || 'UTC'
-    });
+    const availability = new Availability(availabilityData);
 
     await availability.save();
     await availability.populate('tutor', 'name email avatar subjects hourlyRate rating');
+
+    // Create notification for availability creation
+    try {
+      const dateInfo = isRecurring !== false 
+        ? `every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]}`
+        : `on ${new Date(specificDate).toLocaleDateString()}`;
+      
+      await NotificationService.createAvailabilityNotification(
+        req.user._id,
+        req.user,
+        availability,
+        'created',
+        `New availability slot created for ${dateInfo} from ${startTime} to ${endTime}`
+      );
+    } catch (notificationError) {
+      console.error('Failed to create availability notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -142,6 +194,24 @@ router.put('/:id', protect, authorize('tutor'), async (req, res) => {
       { new: true, runValidators: true }
     ).populate('tutor', 'name email avatar subjects hourlyRate rating');
 
+    // Create notification for availability update
+    try {
+      const dateInfo = availability.isRecurring !== false 
+        ? `every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][availability.dayOfWeek]}`
+        : `on ${new Date(availability.specificDate).toLocaleDateString()}`;
+      
+      await NotificationService.createAvailabilityNotification(
+        req.user._id,
+        req.user,
+        availability,
+        'updated',
+        `Availability slot updated for ${dateInfo} from ${availability.startTime} to ${availability.endTime}`
+      );
+    } catch (notificationError) {
+      console.error('Failed to create availability update notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
+
     res.json({
       success: true,
       data: availability
@@ -178,6 +248,24 @@ router.delete('/:id', protect, authorize('tutor'), async (req, res) => {
     }
 
     await Availability.findByIdAndDelete(req.params.id);
+
+    // Create notification for availability deletion
+    try {
+      const dateInfo = availability.isRecurring !== false 
+        ? `every ${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][availability.dayOfWeek]}`
+        : `on ${new Date(availability.specificDate).toLocaleDateString()}`;
+      
+      await NotificationService.createAvailabilityNotification(
+        req.user._id,
+        req.user,
+        availability,
+        'deleted',
+        `Availability slot deleted for ${dateInfo} from ${availability.startTime} to ${availability.endTime}`
+      );
+    } catch (notificationError) {
+      console.error('Failed to create availability deletion notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
 
     res.json({
       success: true,

@@ -74,10 +74,10 @@
                 </v-card>
               </v-col>
 
-              <!-- Weekly Schedule (restored) -->
+              <!-- Next Week Schedule -->
               <v-col cols="12" md="4">
                 <v-card outlined class="side-card-modern" style="box-shadow: none !important;">
-                  <v-card-title>Weekly Availability</v-card-title>
+                  <v-card-title>Next Week Availability</v-card-title>
                   <v-list>
                     <v-list-item v-for="day in weeklySchedule" :key="day.key" dense>
                       <v-list-item-content>
@@ -509,55 +509,63 @@ export default {
       return this.availabilityStore.availability || []
     },
     weeklySchedule() {
-      // Create fresh schedule template
-      const schedule = [
-        { name: 'Monday', key: 'monday', times: [], day: 1 },
-        { name: 'Tuesday', key: 'tuesday', times: [], day: 2 },
-        { name: 'Wednesday', key: 'wednesday', times: [], day: 3 },
-        { name: 'Thursday', key: 'thursday', times: [], day: 4 },
-        { name: 'Friday', key: 'friday', times: [], day: 5 },
-        { name: 'Saturday', key: 'saturday', times: [], day: 6 },
-        { name: 'Sunday', key: 'sunday', times: [], day: 0 }
-      ]
+      // Get the next 7 days starting from tomorrow
+      const today = new Date()
+      const nextWeekDays = []
       
-      // Add actual availability data
+      for (let i = 1; i <= 7; i++) {
+        const date = new Date(today)
+        date.setDate(today.getDate() + i)
+        nextWeekDays.push({
+          date: date,
+          dateString: date.toISOString().split('T')[0],
+          dayOfWeek: date.getDay(),
+          dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+          formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          times: []
+        })
+      }
+      
+      // Add actual availability data for the next 7 days
       if (this.availabilityStore.availability) {
         this.availabilityStore.availability.forEach(slot => {
           if (slot.isRecurring && slot.dayOfWeek) {
-            // Recurring availability
-            const dayIndex = schedule.findIndex(day => day.key === slot.dayOfWeek.toLowerCase())
-            if (dayIndex !== -1) {
-              const timeSlot = `${slot.startTime} - ${slot.endTime}`
-              // Only add if not already present
-              if (!schedule[dayIndex].times.includes(timeSlot)) {
-                schedule[dayIndex].times.push(timeSlot)
-              }
+            // For recurring availability, check if it matches any day in the next week
+            const dayOfWeekMap = {
+              'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+              'thursday': 4, 'friday': 5, 'saturday': 6
             }
+            const slotDayNumber = dayOfWeekMap[slot.dayOfWeek.toLowerCase()]
+            
+            nextWeekDays.forEach(day => {
+              if (day.dayOfWeek === slotDayNumber) {
+                const timeSlot = `${slot.startTime} - ${slot.endTime}`
+                if (!day.times.includes(timeSlot)) {
+                  day.times.push(timeSlot)
+                }
+              }
+            })
           } else if (!slot.isRecurring && slot.specificDate) {
-            // Specific date availability - add to the corresponding day
-            const specificDate = new Date(slot.specificDate)
-            const dayOfWeek = specificDate.getDay()
-            const dayIndex = schedule.findIndex(day => day.day === dayOfWeek)
-            if (dayIndex !== -1) {
-              const formattedDate = specificDate.toLocaleDateString()
-              const timeSlot = `${slot.startTime} - ${slot.endTime} (${formattedDate})`
-              // Only add if not already present
-              if (!schedule[dayIndex].times.includes(timeSlot)) {
-                schedule[dayIndex].times.push(timeSlot)
+            // For specific date availability, check if it's in the next 7 days
+            const slotDate = new Date(slot.specificDate).toISOString().split('T')[0]
+            const matchingDay = nextWeekDays.find(day => day.dateString === slotDate)
+            
+            if (matchingDay) {
+              const timeSlot = `${slot.startTime} - ${slot.endTime}`
+              if (!matchingDay.times.includes(timeSlot)) {
+                matchingDay.times.push(timeSlot)
               }
             }
           }
         })
       }
 
-      // Format times as strings
-      schedule.forEach(day => {
-        if (day.times.length > 0) {
-          day.times = day.times.join(', ')
-        } else {
-          day.times = 'Not available'
-        }
-      })
+      // Format the schedule for display
+      const schedule = nextWeekDays.map(day => ({
+        name: `${day.dayName} (${day.formattedDate})`,
+        key: day.dayName.toLowerCase(),
+        times: day.times.length > 0 ? day.times.join(', ') : 'Not available'
+      }))
   
       return schedule
     }

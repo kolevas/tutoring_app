@@ -9,7 +9,9 @@ const availabilitySchema = new mongoose.Schema({
   dayOfWeek: {
     type: String,
     enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-    required: true
+    required: function() {
+      return this.isRecurring !== false;
+    }
   },
   startTime: {
     type: String,

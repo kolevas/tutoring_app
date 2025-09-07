@@ -47,20 +47,35 @@
                 placeholder="Describe what students will learn in this session..."
               ></v-textarea>
 
-              <!-- Date and Time with Availability Check -->
-              <v-row>
+              <!-- No Availability Warning -->
+              <v-alert 
+                v-if="availabilityLoaded && upcomingAvailableSlots.length === 0"
+                type="warning" 
+                variant="tonal" 
+                class="mb-4"
+              >
+                <v-icon start>mdi-calendar-alert</v-icon>
+                <strong>No availability set!</strong> Please 
+                <router-link to="/availability" class="text-decoration-none">
+                  set your availability
+                </router-link> first to create sessions.
+              </v-alert>
+
+              <!-- Date and Time Selection -->
+              <v-row class="mb-4">
                 <v-col cols="12" md="4">
-                  <v-text-field
+                  <v-select
                     v-model="form.date"
-                    label="Date"
-                    type="date"
-                    :min="today"
+                    :items="availableDates"
+                    label="Available Dates"
                     :rules="dateRules"
                     required
                     outlined
                     prepend-icon="mdi-calendar"
-                    @input="checkAvailabilityForDate"
-                  ></v-text-field>
+                    @update:model-value="checkAvailabilityForDate"
+                    hint="Only dates with availability shown"
+                    persistent-hint
+                  ></v-select>
                 </v-col>
                 <v-col cols="6" md="4">
                   <v-select
@@ -114,6 +129,7 @@
               <v-text-field
                 v-model="form.meetingLink"
                 label="Meeting Link (optional)"
+                :rules="meetingLinkRules"
                 outlined
                 prepend-icon="mdi-video"
                 placeholder="https://zoom.us/j/... or Google Meet link"
@@ -123,6 +139,7 @@
               <v-textarea
                 v-model="form.notes"
                 label="Additional Notes (optional)"
+                :rules="notesRules"
                 outlined
                 rows="3"
                 prepend-icon="mdi-note-text"
@@ -236,6 +253,7 @@ export default {
       availabilityWarning: '',
       dateAvailability: [],
       subjects: FINKI_SUBJECTS,
+      availabilityLoaded: false,
       titleRules: [
         v => !!v || 'Title is required',
         v => v.length >= 5 || 'Title must be at least 5 characters',
@@ -254,6 +272,13 @@ export default {
       ],
       timeRules: [
         v => !!v || 'Time is required'
+      ],
+      meetingLinkRules: [
+        v => !v || v.length <= 500 || 'Meeting link must be less than 500 characters',
+        v => !v || /^https?:\/\/.+/.test(v) || 'Meeting link must be a valid URL starting with http:// or https://'
+      ],
+      notesRules: [
+        v => !v || v.length <= 1000 || 'Notes must be less than 1000 characters'
       ]
     }
   },
@@ -359,6 +384,66 @@ export default {
              this.form.endTime &&
              this.form.endTime > this.form.startTime &&
              this.dateAvailability.length > 0
+    },
+
+    upcomingAvailableSlots() {
+      if (!this.availabilityStore.availability) return []
+
+      const today = new Date()
+      const nextFourWeeks = new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000)
+      const slots = []
+
+      // Get all availability slots
+      this.availabilityStore.availability.forEach(slot => {
+        if (slot.isRecurring) {
+          // For recurring slots, generate dates for the next four weeks
+          for (let d = new Date(today); d <= nextFourWeeks; d.setDate(d.getDate() + 1)) {
+            const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][d.getDay()]
+            if (slot.dayOfWeek === dayOfWeek && d >= today) {
+              slots.push({
+                date: new Date(d).toISOString().split('T')[0],
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                isRecurring: true,
+                availabilityId: slot._id
+              })
+            }
+          }
+        } else if (slot.specificDate) {
+          // For specific date slots
+          const slotDate = new Date(slot.specificDate)
+          if (slotDate >= today && slotDate <= nextFourWeeks) {
+            slots.push({
+              date: new Date(slotDate).toISOString().split('T')[0],
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              isRecurring: false,
+              availabilityId: slot._id
+            })
+          }
+        }
+      })
+
+      // Sort by date and start time
+      return slots.sort((a, b) => {
+        const dateCompare = new Date(a.date) - new Date(b.date)
+        if (dateCompare !== 0) return dateCompare
+        return a.startTime.localeCompare(b.startTime)
+      })
+    },
+
+    availableDates() {
+      const uniqueDates = [...new Set(this.upcomingAvailableSlots.map(slot => slot.date))]
+      return uniqueDates.map(date => {
+        const dateObj = new Date(date + 'T00:00:00')
+        const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+        const month = dateObj.toLocaleDateString('en-US', { month: 'short' })
+        const day = dateObj.getDate()
+        return {
+          title: `${dayName}, ${month} ${day} (${date})`,
+          value: date
+        }
+      }).sort((a, b) => new Date(a.value) - new Date(b.value))
     }
   },
 
@@ -523,11 +608,15 @@ export default {
     if (this.authStore.user && this.authStore.user.role === 'tutor') {
       try {
         await this.availabilityStore.fetchMyAvailability()
+        this.availabilityLoaded = true
         // Check availability for the default date
         this.checkAvailabilityForDate()
       } catch (error) {
         console.error('Error loading availability:', error)
+        this.availabilityLoaded = true // Still mark as loaded even if there's an error
       }
+    } else {
+      this.availabilityLoaded = true
     }
   }
 }
