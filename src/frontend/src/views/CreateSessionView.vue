@@ -393,7 +393,7 @@ export default {
       const nextFourWeeks = new Date(today.getTime() + 28 * 24 * 60 * 60 * 1000)
       const slots = []
 
-      // Get all availability slots
+      // Get all availability slots (this shows potential dates, actual filtering happens per date)
       this.availabilityStore.availability.forEach(slot => {
         if (slot.isRecurring) {
           // For recurring slots, generate dates for the next four weeks
@@ -464,28 +464,16 @@ export default {
       if (!this.form.date || !this.authStore.user) return
 
       try {
-        const date = new Date(this.form.date)
-        const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()]
+        // Use the API endpoint that filters out already booked slots
+        const availableSlots = await this.availabilityStore.fetchDateAvailability(this.authStore.user._id, this.form.date)
         
-        // First ensure we have the latest availability data
-        await this.availabilityStore.fetchMyAvailability()
+        this.dateAvailability = availableSlots || []
         
-        // Get availability for this tutor and day (both recurring and specific date)
-        const allAvailability = this.availabilityStore.availability || []
-        
-        this.dateAvailability = allAvailability.filter(slot => {
-          // Check if it's a recurring slot for this day of week
-          if (slot.isRecurring && slot.dayOfWeek === dayOfWeek) {
-            return true
-          }
-          // Check if it's a specific date slot for this exact date
-          if (!slot.isRecurring && slot.specificDate) {
-            const slotDate = new Date(slot.specificDate).toISOString().split('T')[0]
-            const selectedDate = this.form.date
-            return slotDate === selectedDate
-          }
-          return false
-        })
+        if (this.dateAvailability.length === 0) {
+          this.availabilityWarning = 'No available time slots for this date. Either set your availability or all slots are already booked.'
+        } else {
+          this.availabilityWarning = ''
+        }
         
         // Reset time selections when date changes
         this.form.startTime = ''
@@ -494,6 +482,7 @@ export default {
       } catch (error) {
         console.error('Error checking availability:', error)
         this.availabilityWarning = 'Error checking availability for this date.'
+        this.dateAvailability = []
       }
     },
 

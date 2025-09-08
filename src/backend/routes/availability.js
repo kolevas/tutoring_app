@@ -299,12 +299,13 @@ router.get('/:tutorId/date/:date', async (req, res) => {
       isAvailable: true
     }).populate('tutor', 'name email avatar subjects hourlyRate rating');
 
-    // TODO: Filter out time slots that are already booked
-    // This would require checking against the Session model
+    // Filter out slots that already have a session for this date/time/tutor
+    const { filterAvailableSlots } = require('../utils/availability');
+    const availableSlots = await filterAvailableSlots(availability, date, tutorId);
 
     res.json({
       success: true,
-      data: availability
+      data: availableSlots
     });
   } catch (error) {
     console.error('Get date availability error:', error);
