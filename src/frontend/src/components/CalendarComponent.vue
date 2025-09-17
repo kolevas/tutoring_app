@@ -129,8 +129,7 @@ export default {
       const colors = {
         available: '#4CAF50',    // Green
         booked: '#2196F3',       // Blue
-        completed: '#9E9E9E',    // Grey
-        cancelled: '#F44336'     // Red
+        passed: '#9E9E9E'        // Grey
       }
       return colors[status] || '#9E9E9E'
     },

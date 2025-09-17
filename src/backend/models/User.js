@@ -23,7 +23,12 @@ const userSchema = new mongoose.Schema({
   },
   studentIndex: {
     type: String,
-    required: false, // Optional since not all users need it
+    required: function() {
+      // Required for students and tutors, but not for admins
+      return this.role !== 'admin';
+    },
+    unique: true,
+    sparse: true, // Allows null values to not be unique
     validate: {
       validator: function(index) {
         // Only validate format if provided
@@ -135,6 +140,22 @@ userSchema.pre('save', async function(next) {
   
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Validate studentIndex requirement based on role
+userSchema.pre('save', function(next) {
+  // If role is student or tutor, studentIndex is required
+  if ((this.role === 'student' || this.role === 'tutor') && !this.studentIndex) {
+    const error = new Error('Student index is required for students and tutors');
+    return next(error);
+  }
+  
+  // If role is admin, studentIndex should not be set
+  if (this.role === 'admin' && this.studentIndex) {
+    this.studentIndex = undefined; // Remove studentIndex for admin users
+  }
+  
+  next();
 });
 
 // Compare password method

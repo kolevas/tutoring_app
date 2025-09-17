@@ -188,44 +188,6 @@
           </v-chip>
         </template>
 
-        <!-- Actions Column -->
-        <template v-slot:item.actions="{ item }">
-          <v-menu offset-y>
-            <template #activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on">
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item @click="viewSession(item)">
-                <v-list-item-icon>
-                  <v-icon>mdi-eye</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>View</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="editSession(item)">
-                <v-list-item-icon>
-                  <v-icon>mdi-pencil</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Edit</v-list-item-title>
-              </v-list-item>
-              <v-list-item v-if="item.status==='booked'" @click="cancelSession(item)">
-                <v-list-item-icon>
-                  <v-icon>mdi-cancel</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Cancel Booking</v-list-item-title>
-              </v-list-item>
-              <v-divider />
-              <v-list-item @click="deleteSession(item)" class="error--text">
-                <v-list-item-icon>
-                  <v-icon color="error">mdi-delete</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>Delete</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </template>
-
         <!-- No Data Template -->
         <template v-slot:no-data>
           <div class="text-center pa-10">
@@ -439,8 +401,7 @@ export default {
       statusOptions: [
         { text: 'Available', value: 'available' },
         { text: 'Booked', value: 'booked' },
-        { text: 'Completed', value: 'completed' },
-        { text: 'Cancelled', value: 'cancelled' }
+        { text: 'Passed', value: 'passed' }
       ]
     }
   },
@@ -486,26 +447,22 @@ export default {
         {
           title: 'Total Sessions',
           value: sessions.length,
-          icon: 'mdi-calendar',
-          color: 'primary'
+          icon: 'mdi-calendar'
         },
         {
           title: 'Available',
           value: sessions.filter(s => s.status === 'available').length,
-          icon: 'mdi-calendar-check',
-          color: 'success'
+          icon: 'mdi-calendar-check'
         },
         {
           title: 'Booked',
           value: sessions.filter(s => s.status === 'booked').length,
-          icon: 'mdi-calendar-account',
-          color: 'warning'
+          icon: 'mdi-calendar-account'
         },
         {
-          title: 'Completed',
-          value: sessions.filter(s => s.status === 'completed').length,
-          icon: 'mdi-calendar-star',
-          color: 'info'
+          title: 'Passed',
+          value: sessions.filter(s => s.status === 'passed').length,
+          icon: 'mdi-calendar-star'
         }
       ]
     },
@@ -519,8 +476,7 @@ export default {
       const colors = {
         available: 'success',
         booked: 'warning',
-        completed: 'info',
-        cancelled: 'error'
+        passed: 'info'
       }
       return colors[status] || 'grey'
     },

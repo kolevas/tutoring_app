@@ -24,9 +24,9 @@
             <v-icon class="mr-2">mdi-calendar-account</v-icon>
             Booked ({{ bookedSessions.length }})
           </v-tab>
-          <v-tab value="completed">
+          <v-tab value="passed">
             <v-icon class="mr-2">mdi-check-circle</v-icon>
-            Completed ({{ completedSessions.length }})
+            Passed ({{ passedSessions.length }})
           </v-tab>
           <v-tab value="all">
             <v-icon class="mr-2">mdi-calendar-multiple</v-icon>
@@ -48,7 +48,7 @@
           @complete-session="completeSession"
           @cancel-session="cancelSession"
           @contact-student="contactStudent"
-          :show-ratings="activeTab === 'completed'"
+          :show-ratings="activeTab === 'passed'"
         />
       </v-col>
     </v-row>
@@ -110,13 +110,13 @@ export default {
     bookedSessions() {
       return this.allMySessions.filter(session => session.status === 'booked')
     },
-    completedSessions() {
-      return this.allMySessions.filter(session => ['completed', 'cancelled', 'expired'].includes(session.status))
+    passedSessions() {
+      return this.allMySessions.filter(session => session.status === 'passed')
     },
     filteredSessions() {
       if (this.activeTab === 'available') return this.availableSessions
       if (this.activeTab === 'booked') return this.bookedSessions
-      if (this.activeTab === 'completed') return this.completedSessions
+      if (this.activeTab === 'passed') return this.passedSessions
       return this.allMySessions
     }
   },
@@ -149,9 +149,9 @@ export default {
     },
 
     async completeSession(sessionId) {
-      const result = await this.sessionStore.updateSession(sessionId, { status: 'completed' })
+      const result = await this.sessionStore.updateSession(sessionId, { status: 'passed' })
       if (result.success) {
-        // Session marked as completed
+        // Session marked as passed
       } else {
         console.error('Failed to update session:', result.error)
       }

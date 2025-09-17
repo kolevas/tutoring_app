@@ -18,38 +18,44 @@
         
         <v-card class="session-card" elevation="2">
           <v-card-title class="pb-2">
+            <!-- Course Name -->
+            <div class="w-100 mb-3">
+              <h3 class="session-title text-truncate" :title="session.subject || session.title || 'Session'">
+                {{ session.subject || session.title || 'Session' }}
+              </h3>
+            </div>
+            
+            <!-- Status and Actions Row -->
             <div class="d-flex justify-space-between align-center w-100">
-              <div>
-                <h3 class="text-h6 mb-2">{{ session.subject || 'Session' }}</h3>
-                <v-chip 
-                  :color="getStatusColor(session.status)" 
-                  small 
-                  text-color="white"
-                  class="text-capitalize"
-                >
-                  {{ session.status }}
-                </v-chip>
-              </div>
-              <div class="d-flex gap-2">
+              <v-chip 
+                :color="getStatusColor(session.status)" 
+                small 
+                text-color="white"
+                class="text-capitalize"
+              >
+                {{ session.status }}
+              </v-chip>
+              
+              <div class="d-flex gap-1">
                 <v-btn 
                   v-if="canEditSession(session)" 
                   small 
                   color="primary" 
+                  variant="outlined"
                   @click="$emit('edit-session', session._id)"
-                  elevation="1"
+                  size="small"
                 >
-                  <v-icon left small>mdi-pencil</v-icon>
-                  Edit
+                  <v-icon size="16">mdi-pencil</v-icon>
                 </v-btn>
                 <v-btn 
                   v-if="canDeleteSession(session)" 
                   small 
                   color="error" 
+                  variant="outlined"
                   @click="$emit('delete-session', session._id)"
-                  elevation="1"
+                  size="small"
                 >
-                  <v-icon left small>mdi-delete</v-icon>
-                  Delete
+                  <v-icon size="16">mdi-delete</v-icon>
                 </v-btn>
               </div>
             </div>
@@ -77,7 +83,7 @@
             </div>
             <div v-else class="mb-2">
               <v-icon small class="mr-2" color="orange">mdi-account-question</v-icon>
-              <span class="text-body-2 text--secondary">No student booked yet</span>
+              <span class="text-body-2 text--secondary">No student booked</span>
             </div>
           </v-card-text>
         </v-card>
@@ -162,9 +168,7 @@ export default {
       const colors = {
         available: 'success',
         booked: 'primary',
-        completed: 'grey',
-        cancelled: 'error',
-        expired: 'orange'
+        passed: 'grey'
       }
       return colors[status] || 'grey'
     },
@@ -210,6 +214,34 @@ export default {
   line-height: 1.2 !important;
   padding-bottom: 0.5rem !important;
   font-weight: 600;
+}
+
+.session-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+  margin-bottom: 0;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-title:hover {
+  color: #1976d2;
+  cursor: default;
+}
+
+.v-btn.v-btn--size-small {
+  min-width: 32px;
+  padding: 0 8px;
+}
+
+.gap-1 {
+  gap: 4px;
 }
 
 .v-card-text {

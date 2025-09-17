@@ -29,6 +29,16 @@
                   outlined
                 ></v-text-field>
                 <v-text-field
+                  v-model="form.studentIndex"
+                  label="Student Index"
+                  prepend-icon="mdi-card-account-details"
+                  :rules="studentIndexRules"
+                  required
+                  outlined
+                  hint="6-digit student index number (required for students and tutors)"
+                  maxlength="6"
+                ></v-text-field>
+                <v-text-field
                   v-model="form.password"
                   label="Password"
                   :type="showPassword ? 'text' : 'password'"
@@ -55,8 +65,10 @@
                 <v-alert type="info" variant="tonal" class="mb-4">
                   <v-icon start>mdi-information</v-icon>
                   <div>
-                    <strong>Role Assignment:</strong> All new users start as students. 
-                    Admins can later assign tutor roles based on qualifications and verification.
+                    <strong>Registration Requirements:</strong><br>
+                    • All new users start as students<br>
+                    • Student index is required for all users<br>
+                    • Admins can later assign tutor roles based on qualifications
                   </div>
                 </v-alert>
                 <v-btn
@@ -92,6 +104,7 @@ export default {
       form: {
         name: '',
         email: '',
+        studentIndex: '',
         password: '',
         confirmPassword: ''
       },
@@ -108,6 +121,10 @@ export default {
       passwordRules: [
         v => !!v || 'Password is required',
         v => v.length >= 6 || 'Password must be at least 6 characters'
+      ],
+      studentIndexRules: [
+        v => !!v || 'Student index is required',
+        v => /^\d{6}$/.test(v) || 'Student index must be exactly 6 digits'
       ]
     }
   },

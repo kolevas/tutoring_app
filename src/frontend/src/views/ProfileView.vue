@@ -185,40 +185,15 @@
                 </v-list-item-action>
               </v-list-item>
 
-              <v-list-item>
-                <v-list-item-icon>
-                  <v-icon>mdi-bell</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title>Email Notifications</v-list-item-title>
-                  <v-list-item-subtitle>Session reminders and updates</v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-switch v-model="notifications" color="primary"></v-switch>
-                </v-list-item-action>
-              </v-list-item>
-
-              <v-list-item>
-                <v-list-item-icon>
-                  <v-icon>mdi-shield-check</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title>Account Status</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-chip small :color="user.isActive ? 'success' : 'error'">
-                      {{ user.isActive ? 'Active' : 'Inactive' }}
-                    </v-chip>
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-              </v-list-item>
+            
             </v-list>
           </v-card-text>
         </v-card>
       </v-col>
 
       <!-- Statistics Section (for tutors) -->
-      <v-col cols="12" md="6" v-if="user.role === 'tutor'">
-        <v-card elevation="2">
+      <v-col cols="12" md="6" v-if="user.role === 'tutor'" >
+        <v-card elevation="2" style="padding-bottom: 35px;">
           <v-card-title class="info white--text">
             <v-icon class="mr-2">mdi-chart-line</v-icon>
             Your Statistics
@@ -226,19 +201,15 @@
           
           <v-card-text>
             <v-row>
-              <v-col cols="6" class="text-center">
+              <v-col cols="4" class="text-center">
                 <div class="text-h3 primary--text">{{ tutorStats.totalSessions }}</div>
                 <div class="text-caption grey--text">Total Sessions</div>
               </v-col>
-              <v-col cols="6" class="text-center">
+              <v-col cols="4" class="text-center">
                 <div class="text-h3 success--text">{{ tutorStats.completedSessions }}</div>
                 <div class="text-caption grey--text">Completed</div>
               </v-col>
-              <v-col cols="6" class="text-center">
-                <div class="text-h3 warning--text">{{ tutorStats.averageRating }}</div>
-                <div class="text-caption grey--text">Avg. Rating</div>
-              </v-col>
-              <v-col cols="6" class="text-center">
+              <v-col cols="4x" class="text-center">
                 <div class="text-h3 info--text">{{ tutorStats.totalStudents }}</div>
                 <div class="text-caption grey--text">Students Helped</div>
               </v-col>

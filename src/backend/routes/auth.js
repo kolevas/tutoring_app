@@ -16,16 +16,29 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, studentIndex, password } = req.body;
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
+    // Check if user exists (by email or student index)
+    const existingUser = await User.findOne({
+      $or: [
+        { email },
+        { studentIndex }
+      ]
+    });
 
-    if (userExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists'
-      });
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+      if (existingUser.studentIndex === studentIndex) {
+        return res.status(400).json({
+          success: false,
+          message: 'Student index already exists'
+        });
+      }
     }
 
     // Create user with default 'student' role
@@ -33,6 +46,7 @@ const registerUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
+      studentIndex,
       password,
       role: 'student' // Always start as student
     });
@@ -44,6 +58,7 @@ const registerUser = async (req, res) => {
           _id: user._id,
           name: user.name,
           email: user.email,
+          studentIndex: user.studentIndex,
           role: user.role,
           token: generateToken(user._id)
         }

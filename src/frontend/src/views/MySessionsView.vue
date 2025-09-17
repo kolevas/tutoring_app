@@ -68,7 +68,6 @@
               :sessions="pastSessions" 
               :user-role="authStore.user?.role"
               :current-user-id="authStore.user?._id"
-              show-ratings
             />
           </v-tabs-window-item>
         </v-tabs-window>
@@ -173,7 +172,7 @@ export default {
       const now = new Date()
       return this.allMySessions.filter(session => {
         const sessionDate = new Date(session.date)
-        return sessionDate < now || ['completed', 'cancelled', 'expired'].includes(session.status)
+        return sessionDate < now || session.status === 'passed'
       }).sort((a, b) => new Date(b.date) - new Date(a.date))
     },
 
@@ -230,9 +229,9 @@ export default {
     },
 
     async completeSession(sessionId) {
-      const result = await this.sessionStore.updateSession(sessionId, { status: 'completed' })
+      const result = await this.sessionStore.updateSession(sessionId, { status: 'passed' })
       if (result.success) {
-        // Session marked as completed
+        // Session marked as passed
       } else {
         console.error('Failed to update session:', result.error)
       }

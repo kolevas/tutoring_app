@@ -175,9 +175,7 @@ export default {
       switch(this.session.status) {
         case 'available': return 'success'
         case 'booked': return 'warning'
-        case 'completed': return 'info'
-        case 'cancelled': return 'error'
-        case 'in-progress': return 'primary'
+        case 'passed': return 'info'
         default: return 'grey'
       }
     },
@@ -188,9 +186,7 @@ export default {
       switch(this.session.status) {
         case 'available': return 'mdi-check-circle-outline'
         case 'booked': return 'mdi-calendar-check'
-        case 'completed': return 'mdi-check-circle'
-        case 'cancelled': return 'mdi-cancel'
-        case 'in-progress': return 'mdi-play-circle'
+        case 'passed': return 'mdi-check-circle'
         default: return 'mdi-help-circle-outline'
       }
     },
@@ -198,9 +194,7 @@ export default {
       switch(this.session.status) {
         case 'available': return 'Available'
         case 'booked': return 'Booked'
-        case 'completed': return 'Completed'
-        case 'cancelled': return 'Cancelled'
-        case 'in-progress': return 'In Progress'
+        case 'passed': return 'Passed'
         default: return this.session.status
       }
     },
@@ -324,12 +318,8 @@ export default {
   background: var(--color-warning);
 }
 
-.session-card--completed .session-card__background {
+.session-card--passed .session-card__background {
   background: var(--color-info);
-}
-
-.session-card--cancelled .session-card__background {
-  background: var(--color-error);
 }
 
 /* Header */

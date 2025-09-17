@@ -115,14 +115,17 @@
                 {{ availabilityWarning }}
               </v-alert>
 
-              <!-- Duration (calculated) -->
+              <!-- Duration (automatically calculated, hidden from user input) -->
               <v-text-field
-                :value="calculatedDuration"
-                label="Duration"
+                :model-value="calculatedDurationDisplay"
+                label="Session Duration"
                 readonly
                 outlined
                 prepend-icon="mdi-timer"
-                suffix="minutes"
+                hint="Automatically calculated based on start and end time"
+                persistent-hint
+                class="mb-4"
+                :class="{ 'duration-calculated': calculatedDuration > 0 }"
               ></v-text-field>
 
               <!-- Meeting Link -->
@@ -283,6 +286,16 @@ export default {
     }
   },
 
+  watch: {
+    // Watch for changes in start/end time to auto-calculate duration
+    'form.startTime'() {
+      this.updateDuration()
+    },
+    'form.endTime'() {
+      this.updateDuration()
+    }
+  },
+
   computed: {
     today() {
       return new Date().toISOString().split('T')[0]
@@ -297,6 +310,13 @@ export default {
         return diffMins > 0 ? diffMins : 0
       }
       return 0
+    },
+
+    calculatedDurationDisplay() {
+      if (this.calculatedDuration > 0) {
+        return `${this.calculatedDuration} minutes`
+      }
+      return 'Select start and end time'
     },
 
     availableStartTimes() {
@@ -448,6 +468,16 @@ export default {
   },
 
   methods: {
+    // Update duration automatically when times change
+    updateDuration() {
+      // The duration is already calculated in the computed property
+      // This method can be used for any additional logic if needed
+      if (this.calculatedDuration > 0) {
+        // Force reactivity update if needed
+        this.$forceUpdate()
+      }
+    },
+
     // Time conversion utilities
     timeStringToMinutes(timeStr) {
       const [hours, minutes] = timeStr.split(':').map(Number)
@@ -623,5 +653,37 @@ export default {
 
 .v-text-field, .v-textarea, .v-select {
   margin-bottom: 8px;
+}
+
+/* Style for auto-calculated duration field */
+.v-field--disabled .v-field__input {
+  color: #666 !important;
+  background-color: #f5f5f5;
+}
+
+/* Ensure readonly duration field is visually distinct */
+.v-text-field[readonly] {
+  background-color: #f8f9fa;
+}
+
+.v-text-field[readonly] .v-field__input {
+  color: #495057 !important;
+  font-weight: 500;
+}
+
+/* Duration field styling */
+.duration-calculated .v-field__input {
+  color: #28a745 !important;
+  font-weight: 600;
+}
+
+/* Ensure the value is always visible in readonly fields */
+.v-text-field[readonly] .v-field__input input {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+.v-text-field[readonly] .v-field__field {
+  background-color: #f8f9fa !important;
 }
 </style>

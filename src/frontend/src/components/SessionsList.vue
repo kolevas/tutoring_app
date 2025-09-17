@@ -106,7 +106,7 @@
             </p>
           </v-card-text>
           
-          <v-card-actions v-if="showRatings && session.status === 'completed'">
+          <v-card-actions v-if="showRatings && session.status === 'passed'">
             <v-spacer></v-spacer>
             <v-btn color="primary" small>
               <v-icon left>mdi-star</v-icon>
@@ -164,9 +164,7 @@ export default {
       const colors = {
         available: 'success',
         booked: 'primary',
-        completed: 'grey',
-        cancelled: 'error',
-        expired: 'orange'
+        passed: 'grey'
       }
       return colors[status] || 'grey'
     },

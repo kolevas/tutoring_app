@@ -6,31 +6,31 @@ const { protect, authorize } = require('../middleware/auth');
 const NotificationService = require('../services/notificationService');
 const router = express.Router();
 
-// Utility function to mark expired sessions
-const markExpiredSessions = async () => {
+// Utility function to mark passed sessions
+const markPassedSessions = async () => {
   try {
     const now = new Date();
     
     // Find sessions that have passed their date and are still available or booked
-    const expiredSessions = await Session.find({
+    const passedSessions = await Session.find({
       date: { $lt: now },
       status: { $in: ['available', 'booked'] }
     });
 
-    // Update them to expired status
-    if (expiredSessions.length > 0) {
+    // Update them to passed status
+    if (passedSessions.length > 0) {
       await Session.updateMany(
         {
           date: { $lt: now },
           status: { $in: ['available', 'booked'] }
         },
-        { status: 'expired' }
+        { status: 'passed' }
       );
       
-      console.log(`Marked ${expiredSessions.length} sessions as expired`);
+      console.log(`Marked ${passedSessions.length} sessions as passed`);
     }
   } catch (error) {
-    console.error('Error marking expired sessions:', error);
+    console.error('Error marking passed sessions:', error);
   }
 };
 
@@ -39,8 +39,8 @@ const markExpiredSessions = async () => {
 // @access  Private
 const getSessions = async (req, res) => {
   try {
-    // First, mark any expired sessions
-    await markExpiredSessions();
+    // First, mark any passed sessions
+    await markPassedSessions();
     
     const { status, tutor, student, date } = req.query;
     let query = {};
@@ -550,8 +550,8 @@ const updateAvailability = async (req, res) => {
 // @access  Public
 const getAvailableSessions = async (req, res) => {
   try {
-    // First, mark any expired sessions
-    await markExpiredSessions();
+    // First, mark any passed sessions
+    await markPassedSessions();
     
     const { subject, date, tutor } = req.query;
     let query = { status: 'available' };
